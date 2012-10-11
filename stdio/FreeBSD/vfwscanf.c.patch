@@ -1,0 +1,179 @@
+--- vfwscanf.c.orig	Tue Nov 18 16:48:06 2003
++++ vfwscanf.c	Tue Nov 18 17:36:22 2003
+@@ -100,7 +100,9 @@
+ #define	CT_INT		3	/* %[dioupxX] conversion */
+ #define	CT_FLOAT	4	/* %[efgEFG] conversion */
+ 
+-static int parsefloat(FILE *, wchar_t *, wchar_t *);
++#ifdef FLOATING_POINT
++static int parsefloat(FILE *, wchar_t **, size_t);
++#endif /* FLOATING_POINT */
+ 
+ extern int __scanfdebug;
+ 
+@@ -136,7 +138,6 @@
+ 	int flags;		/* flags as defined above */
+ 	wchar_t *p0;		/* saves original value of p when necessary */
+ 	int nassigned;		/* number of fields assigned */
+-	int nconversions;	/* number of conversions */
+ 	int nread;		/* number of characters consumed from fp */
+ 	int base;		/* base argument to conversion function */
+ 	wchar_t buf[BUF];	/* buffer for numeric conversions */
+@@ -154,7 +155,6 @@
+ 		{ 10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
+ 
+ 	nassigned = 0;
+-	nconversions = 0;
+ 	nread = 0;
+ 	ccls = ccle = NULL;
+ 	for (;;) {
+@@ -308,7 +308,6 @@
+ 			break;
+ 
+ 		case 'n':
+-			nconversions++;
+ 			if (flags & SUPPRESS)	/* ??? */
+ 				continue;
+ 			if (flags & SHORTSHORT)
+@@ -411,7 +410,6 @@
+ 				if (!(flags & SUPPRESS))
+ 					nassigned++;
+ 			}
+-			nconversions++;
+ 			break;
+ 
+ 		case CT_CCL:
+@@ -476,7 +474,6 @@
+ 				}
+ 			}
+ 			nread += n;
+-			nconversions++;
+ 			break;
+ 
+ 		case CT_STRING:
+@@ -537,7 +534,6 @@
+ 					nassigned++;
+ 				}
+ 			}
+-			nconversions++;
+ 			continue;
+ 
+ 		case CT_INT:
+@@ -680,47 +676,49 @@
+ 				nassigned++;
+ 			}
+ 			nread += p - buf;
+-			nconversions++;
+ 			break;
+ 
+ #ifdef FLOATING_POINT
+ 		case CT_FLOAT:
++		{
++			wchar_t *pbuf;
+ 			/* scan a floating point number as if by strtod */
+-			if (width == 0 || width > sizeof(buf) /
+-			    sizeof(*buf) - 1)
+-				width = sizeof(buf) / sizeof(*buf) - 1;
+-			if ((width = parsefloat(fp, buf, buf + width)) == 0)
++			if ((width = parsefloat(fp, &pbuf, width)) == 0) {
++				if (pbuf)
++					free(pbuf);
+ 				goto match_failure;
++			}
+ 			if ((flags & SUPPRESS) == 0) {
+ 				if (flags & LONGDBL) {
+-					long double res = wcstold(buf, &p);
++					long double res = wcstold(pbuf, &p);
+ 					*va_arg(ap, long double *) = res;
+ 				} else if (flags & LONG) {
+-					double res = wcstod(buf, &p);
++					double res = wcstod(pbuf, &p);
+ 					*va_arg(ap, double *) = res;
+ 				} else {
+-					float res = wcstof(buf, &p);
++					float res = wcstof(pbuf, &p);
+ 					*va_arg(ap, float *) = res;
+ 				}
+-				if (__scanfdebug && p - buf != width)
++				if (__scanfdebug && p - pbuf != width)
+ 					abort();
+ 				nassigned++;
+ 			}
+ 			nread += width;
+-			nconversions++;
++			free(pbuf);
+ 			break;
++		}
+ #endif /* FLOATING_POINT */
+ 		}
+ 	}
+ input_failure:
+-	return (nconversions != 0 ? nassigned : EOF);
++	return (nassigned ? nassigned : EOF);
+ match_failure:
+ 	return (nassigned);
+ }
+ 
+ #ifdef FLOATING_POINT
+ static int
+-parsefloat(FILE *fp, wchar_t *buf, wchar_t *end)
++parsefloat(FILE *fp, wchar_t **buf, size_t width)
+ {
+ 	wchar_t *commit, *p;
+ 	int infnanpos = 0;
+@@ -731,7 +729,16 @@
+ 	wchar_t c;
+ 	wchar_t decpt = (wchar_t)(unsigned char)*localeconv()->decimal_point;
+ 	_Bool gotmantdig = 0, ishex = 0;
++	wchar_t *b, *e;
++	size_t s;
+ 
++	s = (width == 0 ? BUF : width + 1);
++	b = (wchar_t *)malloc(s * sizeof(wchar_t));
++	if (b == NULL) {
++		*buf = NULL;
++		return 0;
++	}
++	e = b + (s - 1);
+ 	/*
+ 	 * We set commit = p whenever the string we have read so far
+ 	 * constitutes a valid representation of a floating point
+@@ -741,9 +748,9 @@
+ 	 * always necessary to read at least one character that doesn't
+ 	 * match; thus, we can't short-circuit "infinity" or "nan(...)".
+ 	 */
+-	commit = buf - 1;
++	commit = b - 1;
+ 	c = WEOF;
+-	for (p = buf; p < end; ) {
++	for (p = b; width == 0 || p < e; ) {
+ 		if ((c = __fgetwc(fp)) == WEOF)
+ 			break;
+ reswitch:
+@@ -858,6 +865,17 @@
+ 		default:
+ 			abort();
+ 		}
++		if (p >= e) {
++			size_t diff = (p - b);
++			s += BUF;
++			b = (wchar_t *)reallocf(b, s * sizeof(wchar_t));
++			if (b == NULL) {
++				*buf = NULL;
++				return 0;
++			}
++			e = b + (s - 1);
++			p = b + diff;
++		}
+ 		*p++ = c;
+ 		c = WEOF;
+ 	}
+@@ -868,6 +886,7 @@
+ 	while (commit < --p)
+ 		__ungetwc(*p, fp);
+ 	*++commit = '\0';
+-	return (commit - buf);
++	*buf = b;
++	return (commit - b);
+ }
+ #endif

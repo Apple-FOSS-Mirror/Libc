@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -139,7 +141,7 @@ size_t _pthread_stack_size = 0;
 #define STACK_START(stack_low)	(STACK_BASE(stack_low) - STACK_RESERVED)
 #define STACK_SELF(sp)		STACK_START(sp)
 
-#if defined(__ppc__)
+#if defined(__ppc__) || defined(__ppc64__)
 static const vm_address_t PTHREAD_STACK_HINT = 0xF0000000;
 #elif defined(__i386__)
 static const vm_address_t PTHREAD_STACK_HINT = 0xB0000000;
@@ -1371,6 +1373,7 @@ pthread_init(void)
 	int mib[2];
 	size_t len;
 	int numcpus;
+	void *stackaddr;
 
         count = HOST_PRIORITY_INFO_COUNT;
 	info = (host_info_t)&priority_info;
@@ -1392,7 +1395,13 @@ pthread_init(void)
 	thread = &_thread;
 	LIST_INSERT_HEAD(&__pthread_head, thread, plist);
 	_pthread_set_self(thread);
-	_pthread_create(thread, attrs, (void *)USRSTACK, mach_thread_self());
+
+    mib[0] = CTL_KERN;
+    mib[1] = KERN_USRSTACK;
+    len = sizeof (stackaddr);
+    if (sysctl (mib, 2, &stackaddr, &len, NULL, 0) != 0)
+       stackaddr = (void *)USRSTACK;
+	_pthread_create(thread, attrs, stackaddr, mach_thread_self());
 	thread->detached = PTHREAD_CREATE_JOINABLE|_PTHREAD_CREATE_PARENT;
 
         /* See if we're on a multiprocessor and set _spin_tries if so.  */
@@ -1434,6 +1443,20 @@ pthread_init(void)
     }
 #endif
     
+#if defined(_OBJC_PAGE_BASE_ADDRESS)
+{
+        vm_address_t objcRTPage = (vm_address_t)_OBJC_PAGE_BASE_ADDRESS;
+        kr = vm_map(mach_task_self(),
+                 &objcRTPage, vm_page_size * 4, vm_page_size - 1,
+                 VM_FLAGS_FIXED | VM_MAKE_TAG(0), // Which tag to use?
+                 MACH_PORT_NULL,
+                 (vm_address_t)0, FALSE,
+                 (vm_prot_t)0, VM_PROT_READ | VM_PROT_WRITE | VM_PROT_EXECUTE,
+                 VM_INHERIT_DEFAULT);
+		/* We ignore the return result here. The ObjC runtime will just have to deal. */
+}
+#endif
+
 	mig_init(1);		/* enable multi-threaded mig interfaces */
 	return 0;
 }

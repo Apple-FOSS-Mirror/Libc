@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -60,6 +62,8 @@ mach_port_t     mach_host_self_ = MACH_PORT_NULL;
 __private_extern__ kern_return_t _host_mach_msg_trap_return_;
 
 vm_size_t	vm_page_size;
+vm_size_t	vm_page_mask;
+int		vm_page_shift;
 
 /*
  * Forward internal declarations for automatic mach_init during
@@ -137,7 +141,25 @@ int mach_init_doit(int forkchild)
 	 *	Cache some other valuable system constants
 	 */
 
+#if defined(__ppc64__) /* NGK hack for now */
+	vm_page_size = 4096;
+#else
 	(void)host_page_size(host, &vm_page_size);
+#endif
+	vm_page_mask = vm_page_size - 1;
+	if (vm_page_size == 0) {
+		/* guard against unlikely craziness */
+		vm_page_shift = 0;
+	} else {
+		/*
+		 * Unfortunately there's no kernel interface to get the
+		 * vm_page_shift, but it's easy enough to calculate.
+		 */
+		for (vm_page_shift = 0;
+		     (vm_page_size & (1 << vm_page_shift)) == 0;
+		     vm_page_shift++)
+			continue;
+	}
 
 	mach_port_deallocate(mach_task_self_, host);
 

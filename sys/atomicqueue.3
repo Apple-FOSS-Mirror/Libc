@@ -1,0 +1,65 @@
+.Dd May 26, 2004
+.Dt ATOMICQUEUE 3
+.Os Darwin
+.Sh NAME
+.Nm OSAtomicEnqueue ,
+.Nm OSAtomicDequeue
+.Nd atomic enqueue and dequeue on a singly linked list
+.Sh LIBRARY
+.Lb libc
+.Sh SYNOPSIS
+.In libkern/OSAtomic.h
+.Ft void
+.Fn OSAtomicEnqueue "void ** inList, void * inNewLink, size_t inOffset"
+.Ft void *
+.Fn OSAtomicDequeue "void ** inList, size_t inOffset"
+.Sh DESCRIPTION
+.Fn OSAtomicEnqueue
+and
+.Fn OSAtomicDequeue
+operate on zero-terminated singly-linked lists of structures whose
+link field need not be the first element.
+They are thread safe and incorporate memory barriers as required to
+synchronize access to the shared memory.  The list is last in, first out.
+.Pp
+If thread safety is not a requirement, then the queue(3) package is more
+flexible and possibly more efficient.
+.Pp
+.Fa inList
+is the pointer to the head of the list.  It is not a structure, and should be
+initialized to
+.Dv NIL .
+.Fa inOffset
+is the offset within the structure of the link field.
+.Fa inNewLink
+is a pointer to the structure to be queued on the list:
+.Bd -literal -offset indent
+typedef struct node {
+    long    data1;
+    struct  node *link;
+    int     data2;
+} node;
+
+node    *head = NIL;
+node    n1, n2;
+node    *p;
+
+/* put n1 on the list */
+OSAtomicEnqueue( (void**) &head, &n1, offsetof(node,link));
+
+/* then put n2 on the list */
+OSAtomicEnqueue( (void**) &head, &n2, offsetof(node,link));
+
+/* dequeue n2 (ie, the node most recently added) */
+p = OSAtomicDequeue( (void**) &head, offsetof(node,link));
+.Ed
+.Sh RETURN VALUES
+.Fn OSAtomicDequeue
+returns a pointer to the node removed from the list, or 
+.Dv NIL
+if the list is empty.
+.Sh SEE ALSO
+.Xr atomic 3 ,
+.Xr spinlock 3 ,
+.Xr barrier 3 ,
+.Xr queue 3

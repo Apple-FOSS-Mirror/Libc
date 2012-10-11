@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -24,8 +26,8 @@
  * Copyright (c) 1995 NeXT Computer, Inc. All Rights Reserved
  */
 #import	"sigcatch.h"
+#import	<sys/types.h>
 #import	<signal.h>
-#import	<sys/signal.h>
 #import	<ucontext.h>
 
 /*
@@ -41,7 +43,7 @@ int __in_sigtramp = 0;
 
 /* These defn should match the kernel one */
 #define UC_TRAD			1
-#ifdef __ppc__
+#if defined(__ppc__) || defined(__ppc64__)
 #define UC_TRAD64		20
 #define UC_TRAD64_VEC		25
 #define UC_FLAVOR		30
@@ -61,10 +63,10 @@ int __in_sigtramp = 0;
 #define UC_FLAVOR64_VEC_SIZE ((PPC_THREAD_STATE64_COUNT + PPC_EXCEPTION_STATE64_COUNT + PPC_FLOAT_STATE_COUNT + PPC_VECTOR_STATE_COUNT) * sizeof(int))
 #endif
 
-#ifdef __ppc__
+#if defined(__ppc__) || defined(__ppc64__)
 /* This routine will be replaced by an assembly soon */
 static  int
-restore64_state(mcontext_t mctx, mcontext64_t mctx64, int sigstyle)
+restore64_state(mcontext_t mctx, mcontext64_t mctx64)
 {
 	if (mctx->ss.srr0 != (unsigned int)mctx64->ss.srr0)
 		return(0);	
@@ -144,11 +146,6 @@ restore64_state(mcontext_t mctx, mcontext64_t mctx64, int sigstyle)
 	if (mctx->ss.ctr != (unsigned int)mctx64->ss.ctr)
 		return(0);	
 
-	if (bcmp(&mctx->fs, &mctx64->ss, (PPC_FLOAT_STATE_COUNT * sizeof(int))))
-		return(0);
-	if ((sigstyle == UC_DUAL_VEC) && bcmp(&mctx->vs, &mctx64->vs, (PPC_VECTOR_STATE_COUNT * sizeof(int))))
-		return(0);
-		
 	return(1);
 
 }
@@ -163,7 +160,7 @@ _sigtramp(
 	siginfo_t		*sinfo,
 	struct ucontext		*uctx
 ) {
-#ifdef __ppc__
+#if defined(__ppc__) || defined(__ppc64__)
 	int ctxstyle = UC_FLAVOR;
 #endif
 	mcontext_t mctx;
@@ -172,10 +169,10 @@ _sigtramp(
 #if defined(__DYNAMIC__)
         __in_sigtramp++;
 #endif
-#ifndef __ppc__
+#ifdef __i386__
 	if (sigstyle == UC_TRAD)
         	sa_handler(sig);
-#else /* __ppc__ */
+#elif defined(__ppc__) || defined(__ppc64__)
 	if ((sigstyle == UC_TRAD) || (sigstyle == UC_TRAD64) || (sigstyle == UC_TRAD64_VEC))
         	sa_handler(sig);
 
@@ -186,7 +183,7 @@ _sigtramp(
 		mctx = uctx->uc_mcontext;
 		mctx64 = (mcontext64_t)((char *)(uctx->uc_mcontext) + sizeof(struct mcontext));
 		/* restore 64bit state ? */
-		if (restore64_state(mctx, mctx64, sigstyle)) {
+		if (restore64_state(mctx, mctx64)) {
 			uctx->uc_mcontext = (void *)mctx64;
 			if (sigstyle == UC_DUAL)  {
 				uctx->uc_mcsize = UC_FLAVOR64_SIZE;
@@ -203,12 +200,12 @@ _sigtramp(
 		}
 	} else
 		ctxstyle = sigstyle;
-#endif /* __ppc__ */
+#endif /* __ppc__ || __ppc64__ */
 
 #if defined(__DYNAMIC__)
         __in_sigtramp--;
 #endif
-#ifdef __ppc__
+#if defined(__ppc__) || defined(__ppc64__)
 	{
         /* sigreturn(uctx, ctxstyle); */
 	/* syscall (SYS_SIGRETURN, uctx, ctxstyle); */
@@ -216,6 +213,6 @@ _sigtramp(
 	}
 #else
 	sigreturn(uctx);
-#endif /* __ppc__ */
+#endif /* __ppc__ || __ppc64__ */
 }
 

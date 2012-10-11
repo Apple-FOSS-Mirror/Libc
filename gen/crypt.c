@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -57,7 +59,17 @@
  */
 
 
+/*
+ * PR-3509199
+ *
+ * encrypt() and setkey() should return void, but were returning int.  For
+ * backwards compatibility, define __APPLE_PR_3509199_COMPAT__ to continue
+ * to return int, even though unistd.h declares void.  We will need to not
+ * include unistd.h so as to avoid the prototype mismatch.
+ */
+#ifndef __APPLE_PR_3509199_COMPAT__
 #include <unistd.h>
+#endif /* __APPLE_PR_3509199_COMPAT__ */
 #include <limits.h>
 #include <pwd.h>
 #include <stdlib.h>
@@ -935,7 +947,11 @@ STATIC void init_perm(perm, p, chars_in, chars_out)
 /*
  * "setkey" routine (for backwards compatibility)
  */
+#ifdef __APPLE_PR_3509199_COMPAT__
 int setkey(key)
+#else /* __APPLE_PR_3509199_COMPAT__ */
+void setkey(key)
+#endif /* __APPLE_PR_3509199_COMPAT__ */
 	register const char *key;
 {
 	register int i, j, k;
@@ -949,13 +965,21 @@ int setkey(key)
 		}
 		keyblock.b[i] = k;
 	}
+#ifdef __APPLE_PR_3509199_COMPAT__
 	return (des_setkey((char *)keyblock.b));
+#else /* __APPLE_PR_3509199_COMPAT__ */
+	des_setkey((char *)keyblock.b);
+#endif /* __APPLE_PR_3509199_COMPAT__ */
 }
 
 /*
  * "encrypt" routine (for backwards compatibility)
  */
+#ifdef __APPLE_PR_3509199_COMPAT__
 int encrypt(block, flag)
+#else /* __APPLE_PR_3509199_COMPAT__ */
+void encrypt(block, flag)
+#endif /* __APPLE_PR_3509199_COMPAT__ */
 	register char *block;
 	int flag;
 {
@@ -970,8 +994,12 @@ int encrypt(block, flag)
 		}
 		cblock.b[i] = k;
 	}
+#ifdef __APPLE_PR_3509199_COMPAT__
 	if (des_cipher((char *)&cblock, (char *)&cblock, 0L, (flag ? -1: 1)))
 		return (1);
+#else /* __APPLE_PR_3509199_COMPAT__ */
+	(void)des_cipher((char *)&cblock, (char *)&cblock, 0L, (flag ? -1: 1));
+#endif /* __APPLE_PR_3509199_COMPAT__ */
 	for (i = 7; i >= 0; i--) {
 		k = cblock.b[i];
 		for (j = 7; j >= 0; j--) {
@@ -979,7 +1007,9 @@ int encrypt(block, flag)
 			k >>= 1;
 		}
 	}
+#ifdef __APPLE_PR_3509199_COMPAT__
 	return (0);
+#endif /* __APPLE_PR_3509199_COMPAT__ */
 }
 
 #ifdef DEBUG

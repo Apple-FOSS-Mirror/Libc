@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -38,7 +40,7 @@ static inline void *allocate_pages(unsigned bytes) {
     void *address;
     if (vm_allocate(mach_task_self(), (vm_address_t *)&address, bytes, 
                     VM_MAKE_TAG(VM_MEMORY_ANALYSIS_TOOL)| TRUE)) {
-	malloc_printf("malloc[%d]: Out of memory while stack logging\n", getpid());
+	malloc_printf("*** out of memory while stack logging\n");
 	abort();
     } 
     return (void *)address;
@@ -55,9 +57,9 @@ static inline void copy_pages(const void *source, void *dest, unsigned bytes) {
 /***************	Recording stack		***********/
 
 static void *first_frame_address(void) {
-#if 0
+#if defined(__i386__)
     return __builtin_frame_address(1);
-#elif defined(__ppc__)
+#elif defined(__ppc__) || defined(__ppc64__)
     void *addr;
 #warning __builtin_frame_address IS BROKEN IN BEAKER: RADAR #2340421
     __asm__ volatile("mr %0, r1" : "=r" (addr));
@@ -72,7 +74,7 @@ static void *next_frame_address(void *addr) {
     void *ret;
 #if defined(__MACH__) && defined(__i386__)
     __asm__ volatile("movl (%1),%0" : "=r" (ret) : "r" (addr));
-#elif defined(__MACH__) && defined(__ppc__)
+#elif defined(__MACH__) && (defined(__ppc__) || defined(__ppc64__))
     __asm__ volatile("lwz %0,0x0(%1)" : "=r" (ret) : "b" (addr));
 #elif defined(__hpux__)
     __asm__ volatile("ldw 0x0(%1),%0" : "=r" (ret) : "r" (addr));
@@ -87,7 +89,7 @@ static void *next_frame_address(void *addr) {
 
 #if defined(__i386__) || defined (__m68k__)
 #define FP_LINK_OFFSET 1
-#elif defined(__ppc__)
+#elif defined(__ppc__) || defined(__ppc64__)
 #define FP_LINK_OFFSET 2
 #elif defined(__hppa__)
 #define FP_LINK_OFFSET -5
@@ -107,7 +109,7 @@ void thread_stack_pcs(vm_address_t *buffer, unsigned max, unsigned *nb) {
         buffer[*nb] = *((vm_address_t *)fp_link);
         (*nb)++;
         addr2 = next_frame_address(addr);
-#if defined(__ppc__)
+#if defined(__ppc__) || defined(__ppc64__)
         if ((unsigned)addr2 <= (unsigned)addr) break; // catch bozo frames
 #endif
         addr = addr2;

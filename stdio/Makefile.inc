@@ -4,12 +4,8 @@
 # stdio sources
 .PATH: ${.CURDIR}/stdio
 
-CFLAGS+= -DHEXFLOAT
-
-SRCS += hexfloat.c
-
 .include "Makefile.fbsd_begin"
-FBSDSRCS= _flock_stub.c asprintf.c clrerr.c fclose.c fdopen.c feof.c ferror.c \
+FBSDMISRCS= _flock_stub.c asprintf.c clrerr.c fclose.c fdopen.c feof.c ferror.c \
 	fflush.c fgetc.c fgetln.c fgetpos.c fgets.c fgetwc.c fgetws.c \
 	fileno.c findfp.c flags.c fopen.c fprintf.c fpurge.c fputc.c fputs.c \
 	fputwc.c fputws.c fread.c freopen.c fscanf.c fseek.c fsetpos.c \
@@ -22,8 +18,12 @@ FBSDSRCS= _flock_stub.c asprintf.c clrerr.c fclose.c fdopen.c feof.c ferror.c \
 	unlocked.c vasprintf.c vfprintf.c vfscanf.c vfwprintf.c vfwscanf.c \
 	vprintf.c vscanf.c vsnprintf.c vsprintf.c vsscanf.c vswprintf.c \
 	vswscanf.c vwprintf.c vwscanf.c wbuf.c wprintf.c wscanf.c wsetup.c
-FBSDORIGHDRS= floatio.h fvwrite.h glue.h local.h
+FBSDHDRS= floatio.h fvwrite.h glue.h local.h
 .include "Makefile.fbsd_end"
+
+.for _src in vfprintf-fbsd.c vfwprintf-fbsd.c
+CFLAGS-${_src} += -fshort-enums
+.endfor
 
 .if ${LIB} == "c"
 .include "Makefile.fbsd_begin"

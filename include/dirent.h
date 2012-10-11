@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -62,14 +64,13 @@
  * The kernel defines the format of directory entries returned by 
  * the getdirentries(2) system call.
  */
-#include <sys/types.h>
+#include <_types.h>
 #include <sys/dirent.h>
 
 #ifdef _POSIX_SOURCE
 typedef void *	DIR;
 #else
-
-#define	d_ino		d_fileno	/* backward compatibility */
+#include <sys/types.h>
 
 /* definitions for library routines operating on directories. */
 #define	DIRBLKSIZ	1024
@@ -99,30 +100,36 @@ typedef struct _dirdesc {
 #define __DTF_READALL	0x0008	/* everything has been read */
 
 #ifndef NULL
-#define	NULL	0
-#endif
+#define NULL __OSX_NULL
+#endif /* ! NULL */
 
-#endif /* _POSIX_SOURCE */
+#endif /* ! _POSIX_SOURCE */
 
 #ifndef KERNEL
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-DIR *opendir(const char *);
-struct dirent *readdir(DIR *);
-void rewinddir(DIR *);
+#ifndef _POSIX_SOURCE
+int alphasort(const void *, const void *);
+#endif /* not POSIX */
 int closedir(DIR *);
 #ifndef _POSIX_SOURCE
+int getdirentries(int, char *, int, long *);
+#endif /* not POSIX */
+DIR *opendir(const char *);
+#ifndef _POSIX_SOURCE
 DIR *__opendir2(const char *, int);
-long telldir(DIR *);
-void seekdir(DIR *, long);
+#endif /* not POSIX */
+struct dirent *readdir(DIR *);
+int readdir_r(DIR *, struct dirent *, struct dirent **);
+void rewinddir(DIR *);
+#ifndef _POSIX_SOURCE
 int scandir(const char *, struct dirent ***,
     int (*)(struct dirent *), int (*)(const void *, const void *));
-int alphasort(const void *, const void *);
-int getdirentries(int, char *, int, long *);
-int readdir_r(DIR *, struct dirent *, struct dirent **);
 #endif /* not POSIX */
+void seekdir(DIR *, long);
+long telldir(DIR *);
 __END_DECLS
 
 #endif /* !KERNEL */

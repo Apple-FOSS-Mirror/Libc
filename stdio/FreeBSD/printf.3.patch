@@ -1,12 +1,12 @@
---- printf.3.orig	Thu Aug 21 18:19:02 2003
-+++ printf.3	Thu Aug 21 18:17:44 2003
+--- printf.3.orig	Fri May 28 14:31:32 2004
++++ printf.3	Fri May 28 14:33:23 2004
 @@ -287,6 +287,20 @@
  .Xr localeconv 3 .
  .El
  .It
-+An optional seperator character (
++An optional separator character (
 +.Cm \ , | \;  | \ : | _
-+) used for seperating multiple values when printing an AltiVec vector,
++) used for separating multiple values when printing an AltiVec vector,
 +or other multi-value unit.
 +.Pp
 +NOTE: This is an AltiVec only extension onto the
@@ -50,3 +50,15 @@
  .It
  A character that specifies the type of conversion to be applied.
  .El
+@@ -785,11 +821,6 @@
+ .Xr scanf 3 ,
+ .Xr setlocale 3 ,
+ .Xr wprintf 3
+-.Rs
+-.%T "The FreeBSD Security Architecture"
+-.Re
+-(See
+-.Pa "/usr/share/doc/{to be determined}" . )
+ .Sh STANDARDS
+ Subject to the caveats noted in the
+ .Sx BUGS

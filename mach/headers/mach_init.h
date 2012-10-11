@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -100,6 +102,8 @@ extern	mach_port_t	service_port;
  */
 
 extern	vm_size_t	vm_page_size;
+extern	vm_size_t	vm_page_mask;
+extern	int		vm_page_shift;
 
 #define trunc_page(x)	((x) & (~(vm_page_size - 1)))
 #define round_page(x)	trunc_page((x) + (vm_page_size - 1))

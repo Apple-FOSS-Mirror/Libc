@@ -15,9 +15,30 @@ NOASM=
 # Use MDSRCS to block one file, and SUPPRESSSRCS to block the others.
 SUPPRESSSRCS=
 
-# Variable needed by the FreeBSD auto-patching mechanism
-FBSDHDRS=
-FBSDPATCHMAN=
+# Auto-patching variables
+AUTOPATCHHDRS=
+AUTOPATCHMAN=
+AUTOPATCHSRCS=
+
+# Auto-patch into OBJROOT
+_AUTOPATCH: .USE
+	@if [ -f ${.ALLSRC}.patch ]; then \
+	    echo cp ${.ALLSRC} ${.TARGET}; \
+	    cp ${.ALLSRC} ${.TARGET}; \
+	    echo patch ${.TARGET} ${.ALLSRC}.patch; \
+	    patch ${.TARGET} ${.ALLSRC}.patch; \
+	else \
+	    echo ln -s ${.ALLSRC} ${.TARGET}; \
+	    ln -s ${.ALLSRC} ${.TARGET}; \
+	fi
+# Auto-patch into SYMROOT
+_AUTOPATCHSYM: .USE
+	@echo cp ${.ALLSRC} ${.TARGET}; \
+	cp ${.ALLSRC} ${.TARGET}; \
+	if [ -f ${.ALLSRC}.patch ]; then \
+	    echo patch ${.TARGET} ${.ALLSRC}.patch; \
+	    patch ${.TARGET} ${.ALLSRC}.patch; \
+	fi
 
 #
 # If there is a machine dependent makefile, use it:
@@ -28,6 +49,7 @@ FBSDPATCHMAN=
 
 .include "${.CURDIR}/db/Makefile.inc"
 .include "${.CURDIR}/compat-43/Makefile.inc"
+.include "${.CURDIR}/emulated/Makefile.inc"
 .include "${.CURDIR}/gdtoa/Makefile.inc"
 .include "${.CURDIR}/gen/Makefile.inc"
 .include "${.CURDIR}/gmon/Makefile.inc"
@@ -50,15 +72,16 @@ FBSDPATCHMAN=
 .include "${.CURDIR}/sys/Makefile.inc"
 .include "${.CURDIR}/threads/Makefile.inc"
 .include "${.CURDIR}/util/Makefile.inc"
+.include "${.CURDIR}/uuid/Makefile.inc"
 #.include "${.CURDIR}/rpc/Makefile.inc"
 #.include "${.CURDIR}/xdr/Makefile.inc"
-.if !defined(NO_YP_LIBC)
-CFLAGS+= -DYP
+#.if !defined(NO_YP_LIBC)
+#CFLAGS+= -DYP
 #.include "${.CURDIR}/yp/Makefile.inc"
-.endif
-.if !defined(NO_HESIOD_LIBC)
-CFLAGS+= -DHESIOD
-.endif
+#.endif
+#.if !defined(NO_HESIOD_LIBC)
+#CFLAGS+= -DHESIOD
+#.endif
 
 # If there are no machine dependent sources, append all the
 # machine-independent sources:

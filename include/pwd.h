@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -66,15 +68,40 @@
 #ifndef _PWD_H_
 #define	_PWD_H_
 
-#include <sys/types.h>
+#include <_types.h>
+
+#ifndef _GID_T_DECLARED
+typedef __osx_gid_t		gid_t;
+#define _GID_T_DECLARED
+#endif
+
+#ifndef _BSD_SIZE_T_DEFINED_
+#define _BSD_SIZE_T_DEFINED_
+typedef __osx_size_t		size_t;
+#endif
+
+#ifndef _BSD_TIME_T_DEFINED_
+#define _BSD_TIME_T_DEFINED_
+typedef __osx_time_t		time_t;
+#endif
+
+#ifndef _UID_T_DECLARED
+typedef __osx_uid_t		uid_t;
+#define _UID_T_DECLARED
+#endif
 
 #ifndef _POSIX_SOURCE
+#define	_PATH_PWD		"/etc"
 #define	_PATH_PASSWD		"/etc/passwd"
+#define	_PASSWD			"passwd"
 #define	_PATH_MASTERPASSWD	"/etc/master.passwd"
 #define	_PATH_MASTERPASSWD_LOCK	"/etc/ptmp"
+#define	_MASTERPASSWD		"master.passwd"
 
 #define	_PATH_MP_DB		"/etc/pwd.db"
+#define	_MP_DB			"pwd.db"
 #define	_PATH_SMP_DB		"/etc/spwd.db"
+#define	_SMP_DB			"spwd.db"
 
 #define	_PATH_PWD_MKDB		"/usr/sbin/pwd_mkdb"
 
@@ -116,15 +143,13 @@ struct passwd	*getpwuid(uid_t);
 struct passwd	*getpwnam(const char *);
 int		 getpwuid_r(uid_t, struct passwd *, char *, size_t, struct passwd **);
 int		 getpwnam_r(const char *, struct passwd *, char *, size_t, struct passwd **);
-#ifndef _POSIX_SOURCE
 struct passwd	*getpwent(void);
-#ifndef _XOPEN_SOURCE
+#if !defined(_POSIX_SOURCE) && !defined(_XOPEN_SOURCE)
 int		 setpassent(int);
 char 		*user_from_uid(uid_t, int);
 #endif
 int		 setpwent(void);
 void		 endpwent(void);
-#endif
 __END_DECLS
 
 #endif /* !_PWD_H_ */

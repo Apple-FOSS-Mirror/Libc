@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -112,6 +114,7 @@
 __BEGIN_DECLS
 int     isalnum(int);
 int     isalpha(int);
+int     isblank(int);
 int     iscntrl(int);
 int     isdigit(int);
 int     isgraph(int);
@@ -125,9 +128,10 @@ int     tolower(int);
 int     toupper(int);
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+int     _tolower(int);
+int     _toupper(int);
 int     digittoint(int);
 int     isascii(int);
-int     isblank(int);
 int     ishexnumber(int);
 int     isideogram(int);
 int     isnumber(int);
@@ -141,6 +145,7 @@ __END_DECLS
 
 #define isalnum(c)      __istype((c), (_CTYPE_A|_CTYPE_D))
 #define isalpha(c)      __istype((c), _CTYPE_A)
+#define isblank(c)	__istype((c), _CTYPE_B)
 #define iscntrl(c)      __istype((c), _CTYPE_C)
 #define isdigit(c)      __isctype((c), _CTYPE_D)	/* ANSI -- locale independent */
 #define isgraph(c)      __istype((c), _CTYPE_G)
@@ -154,9 +159,10 @@ __END_DECLS
 #define toupper(c)      __toupper(c)
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+#define	_tolower(c)	__tolower(c)
+#define	_toupper(c)	__toupper(c)
 #define	digittoint(c)	__maskrune((c), 0xFF)
-#define	isascii(c)	((c & ~0x7F) == 0)
-#define isblank(c)	__istype((c), _CTYPE_B)
+#define	isascii(c)	(((c) & ~0x7F) == 0)
 #define	ishexnumber(c)	__istype((c), _CTYPE_X)
 #define	isideogram(c)	__istype((c), _CTYPE_I)
 #define	isnumber(c)	__istype((c), _CTYPE_D)
@@ -192,8 +198,12 @@ __END_DECLS
 static __inline int     
 __maskrune(_BSD_CT_RUNE_T_ _c, unsigned long _f)
 {
+#ifdef USE_ASCII
+	return _CurrentRuneLocale->runetype[_c && 0xff] & _f;
+#else /* USE_ASCII */
 	return ((_c < 0 || _c >= _CACHED_RUNES) ? ___runetype(_c) :
 		_CurrentRuneLocale->runetype[_c]) & _f;
+#endif /* USE_ASCII */
 }
 
 static __inline int
@@ -205,22 +215,34 @@ __istype(_BSD_CT_RUNE_T_ c, unsigned long f)
 static __inline _BSD_CT_RUNE_T_
 __isctype(_BSD_CT_RUNE_T_ _c, unsigned long _f)
 {
+#ifdef USE_ASCII
+	return !!(_DefaultRuneLocale.runetype[_c & 0xff] & _f);
+#else /* USE_ASCII */
 	return (_c < 0 || _c >= _CACHED_RUNES) ? 0 :
 		!!(_DefaultRuneLocale.runetype[_c] & _f);
+#endif /* USE_ASCII */
 }
 
 static __inline _BSD_CT_RUNE_T_
 __toupper(_BSD_CT_RUNE_T_ _c)
 {
+#ifdef USE_ASCII
+	return _CurrentRuneLocale->mapupper[_c & 0xff];
+#else /* USE_ASCII */
 	return (_c < 0 || _c >= _CACHED_RUNES) ? ___toupper(_c) :
 		_CurrentRuneLocale->mapupper[_c];
+#endif /* USE_ASCII */
 }
 
 static __inline _BSD_CT_RUNE_T_
 __tolower(_BSD_CT_RUNE_T_ _c)
 {
+#ifdef USE_ASCII
+	return _CurrentRuneLocale->maplower[_c & 0xff];
+#else /* USE_ASCII */
 	return (_c < 0 || _c >= _CACHED_RUNES) ? ___tolower(_c) :
 		_CurrentRuneLocale->maplower[_c];
+#endif /* USE_ASCII */
 }
 
 #else /* not using inlines */

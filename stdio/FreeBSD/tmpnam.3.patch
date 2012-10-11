@@ -1,0 +1,14 @@
+--- tmpnam.3.orig	Fri May 28 14:35:53 2004
++++ tmpnam.3	Fri May 28 14:36:02 2004
+@@ -229,11 +229,6 @@
+ .Sh SEE ALSO
+ .Xr mkstemp 3 ,
+ .Xr mktemp 3
+-.Rs
+-.%T "The FreeBSD Security Architecture"
+-.Re
+-(See
+-.Pa "/usr/share/doc/{to be determined}" . )
+ .Sh STANDARDS
+ The
+ .Fn tmpfile

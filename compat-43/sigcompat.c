@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -61,7 +63,8 @@
 extern int _sigaction_nobind (int sig, const struct sigaction *nsv, struct sigaction *osv);
 #endif
 
-static int sigvec__(signo, sv, osv, bind)
+static int
+sigvec__(signo, sv, osv, bind)
 	int signo;
 	struct sigvec *sv, *osv;
 	int bind;
@@ -84,7 +87,8 @@ static int sigvec__(signo, sv, osv, bind)
 	return (ret);
 }
 
-int sigvec(signo, sv, osv)
+int
+sigvec(signo, sv, osv)
         int signo;
         struct sigvec *sv, *osv;
 {
@@ -92,7 +96,8 @@ int sigvec(signo, sv, osv)
 }
 
 #if defined(__DYNAMIC__)
-int _sigvec_nobind(signo, sv, osv)
+int
+_sigvec_nobind(signo, sv, osv)
         int signo;
         struct sigvec *sv, *osv;
 {
@@ -100,7 +105,8 @@ int _sigvec_nobind(signo, sv, osv)
 }
 #endif
 
-int sigsetmask(mask)
+int
+sigsetmask(mask)
 	int mask;
 {
 	int omask, n;
@@ -111,7 +117,8 @@ int sigsetmask(mask)
 	return (omask);
 }
 
-int sigblock(mask)
+int
+sigblock(mask)
 	int mask;
 {
 	int omask, n;
@@ -122,13 +129,15 @@ int sigblock(mask)
 	return (omask);
 }
 
-int sigpause(mask)
+int
+sigpause(mask)
 	int mask;
 {
 	return (sigsuspend((sigset_t *)&mask));
 }
 
-int sighold(sig)
+int
+sighold(sig)
 	int sig;
 {
 	sigset_t mask;
@@ -139,7 +148,9 @@ int sighold(sig)
 	sigaddset(&mask, sig);
 	return(sigprocmask(SIG_BLOCK, &mask,(sigset_t *)0));
 }
-int sigrelse(sig)
+
+int
+sigrelse(sig)
 	int sig;
 {
 	sigset_t mask;
@@ -149,5 +160,13 @@ int sigrelse(sig)
 	sigemptyset(&mask);
 	sigaddset(&mask, sig);
 	return(sigprocmask(SIG_UNBLOCK, &mask,(sigset_t *)0));
+}
+
+
+int
+sigignore(sig)
+	int sig;
+{
+	return (signal(sig, SIG_IGN) == SIG_ERR ? -1 : 0);
 }
 

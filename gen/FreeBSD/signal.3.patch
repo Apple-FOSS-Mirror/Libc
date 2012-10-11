@@ -1,0 +1,13 @@
+--- signal.3.orig	Tue May 20 15:21:03 2003
++++ signal.3	Sun Nov 30 22:08:18 2003
+@@ -47,9 +47,7 @@
+ .Ft void \*(lp*
+ .Fn signal "int sig" "void \*(lp*func\*(rp\*(lpint\*(rp\*(rp\*(rp\*(lpint"
+ .Pp
+-or in
+-.Fx Ns 's
+-equivalent but easier to read typedef'd version:
++or in the equivalent but easier to read typedef'd version:
+ .Ft typedef "void \*(lp*sig_t\*(rp \*(lpint\*(rp" ;
+ .Ft sig_t
+ .Fn signal "int sig" "sig_t func"

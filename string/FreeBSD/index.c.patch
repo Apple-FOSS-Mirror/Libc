@@ -1,0 +1,13 @@
+--- index.c.orig	Tue May 20 15:23:54 2003
++++ index.c	Tue Dec 16 00:58:24 2003
+@@ -52,8 +52,9 @@
+ #endif
+ (const char *p, int ch)
+ {
++	char c = ch;
+ 	for (;; ++p) {
+-		if (*p == ch)
++		if (*p == c)
+ 			return ((char *)p);
+ 		if (*p == '\0')
+ 			return (NULL);

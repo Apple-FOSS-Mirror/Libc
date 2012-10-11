@@ -1,0 +1,18 @@
+--- fpclassify.3.orig	Fri Oct  3 17:12:53 2003
++++ fpclassify.3	Fri Nov  7 15:46:28 2003
+@@ -107,15 +107,6 @@
+ macros conform to
+ .St -isoC-99 .
+ .Sh HISTORY
+-The
+-.Fn fpclassify ,
+-.Fn isfinite ,
+-.Fn isinf ,
+-.Fn isnan ,
+-and
+-.Fn isnormal
+-macros were added in
+-.Fx 5.1 .
+ .Bx 3
+ introduced
+ .Fn isinf

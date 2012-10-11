@@ -19,16 +19,24 @@ CC = gcc-3.3
 .if (${MACHINE_ARCH} == unknown)
 MACHINE_ARCH != /usr/bin/arch
 .endif 
-.if (${MACHINE_ARCH} == ppc)
+.if (${MACHINE_ARCH} == ppc) || (${MACHINE_ARCH} == ppc64)
 CFLAGS += -faltivec -DALTIVEC
 .endif
-CFLAGS += -DNOID -I${.CURDIR}/include  -I${.CURDIR}/include/objc
-PRIVINC = ${NEXT_ROOT}/System/Library/Frameworks/System.framework/PrivateHeaders
-CFLAGS += -I${PRIVINC}
+CFLAGS += -DNOID
+.ifdef ALTLIBCHEADERS
+CFLAGS += -I${ALTLIBCHEADERS}
+.else
+CFLAGS += -I${.CURDIR}/include
+.endif
+.ifdef ALTFRAMEWORKSPATH
+PRIVINC = -F${ALTFRAMEWORKSPATH} -I${ALTFRAMEWORKSPATH}/System.framework/PrivateHeaders
+.else
+PRIVINC = -I${NEXT_ROOT}/System/Library/Frameworks/System.framework/PrivateHeaders
+.endif
+CFLAGS += ${PRIVINC}
 CFLAGS += -DLIBC_MAJOR=${SHLIB_MAJOR} -no-cpp-precomp -force_cpusubtype_ALL
 CFLAGS += -arch ${MACHINE_ARCH} -fno-common -pipe -Wmost -g
 CFLAGS += -finline-limit=5000 -D__FBSDID=__RCSID -Wno-long-double
-CFLAGS += -D__APPLE_PR3275149_HACK__
 AINC=	-I${.CURDIR}/${MACHINE_ARCH} -no-cpp-precomp -force_cpusubtype_ALL
 AINC+=-arch ${MACHINE_ARCH} -g
 CLEANFILES+=tags
@@ -39,9 +47,15 @@ PRECIOUSLIB=	yes
 DSTROOT ?= /
 OBJROOT ?= .
 SRCROOT ?= ${.CURDIR}
+.ifndef SYMROOT
+SYMROOT = ${.CURDIR}/SYMROOT
+_x_ != test -d ${SYMROOT} || mkdir -p ${SYMROOT}
+.endif
 DESTDIR ?= ${DSTROOT}
 MAKEOBJDIR ?= ${OBJROOT}
 
+CFLAGS += -I${SYMROOT}
 .include "${.CURDIR}/Makefile.inc"
+.PATH: ${SYMROOT}
 .include "Makefile.xbs"
 .include <bsd.man.mk>

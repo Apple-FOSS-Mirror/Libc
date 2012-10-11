@@ -1,0 +1,115 @@
+--- realpath.c.orig	Fri Aug 15 19:22:17 2003
++++ realpath.c	Tue Dec  9 14:36:32 2003
+@@ -40,8 +40,27 @@
+ #include <stdlib.h>
+ #include <string.h>
+ #include <unistd.h>
++#include <sys/attr.h>
++#include <sys/vnode.h>
+ #include "un-namespace.h"
+ 
++struct attrs {
++	u_int32_t len;
++	attrreference_t name;
++	fsobj_type_t type;
++	char buf[PATH_MAX];
++};
++
++static struct attrlist alist = {
++	ATTR_BIT_MAP_COUNT,
++	0,
++	ATTR_CMN_NAME | ATTR_CMN_OBJTYPE,
++	0,
++	0,
++	0,
++	0,
++};
++
+ /*
+  * char *realpath(const char *path, char resolved[PATH_MAX]);
+  *
+@@ -52,11 +71,12 @@
+ char *
+ realpath(const char *path, char resolved[PATH_MAX])
+ {
++	struct attrs attrs;
+ 	struct stat sb;
+ 	char *p, *q, *s;
+-	size_t left_len, resolved_len;
++	size_t left_len, resolved_len, save_resolved_len;
+ 	unsigned symlinks;
+-	int serrno, slen;
++	int serrno, slen, useattrs, islink;
+ 	char left[PATH_MAX], next_token[PATH_MAX], symlink[PATH_MAX];
+ 
+ 	serrno = errno;
+@@ -127,6 +147,13 @@
+ 		}
+ 
+ 		/*
++		 * Save resolved_len, so that we can later null out
++		 * the the appended next_token, and replace with the
++		 * real name (matters on case-insensitive filesystems).
++		 */
++		save_resolved_len = resolved_len;
++
++		/*
+ 		 * Append the next path component and lstat() it. If
+ 		 * lstat() fails we still can return successfully if
+ 		 * there are no more path components left.
+@@ -136,14 +163,22 @@
+ 			errno = ENAMETOOLONG;
+ 			return (NULL);
+ 		}
+-		if (lstat(resolved, &sb) != 0) {
++		if (getattrlist(resolved, &alist, &attrs, sizeof(attrs), FSOPT_NOFOLLOW) == 0) {
++			useattrs = 1;
++			islink = (attrs.type == VLNK);
++		} else if (errno == EOPNOTSUPP || errno == EINVAL) {
++			if ((useattrs = lstat(resolved, &sb)) == 0)
++				islink = S_ISLNK(sb.st_mode);
++		} else
++			useattrs = -1;
++		if (useattrs < 0) {
+ 			if (errno == ENOENT && p == NULL) {
+ 				errno = serrno;
+ 				return (resolved);
+ 			}
+ 			return (NULL);
+ 		}
+-		if (S_ISLNK(sb.st_mode)) {
++		if (islink) {
+ 			if (symlinks++ > MAXSYMLINKS) {
+ 				errno = ELOOP;
+ 				return (NULL);
+@@ -184,7 +219,30 @@
+ 				}
+ 			}
+ 			left_len = strlcpy(left, symlink, sizeof(left));
++		} else if (useattrs) {
++			/*
++			 * attrs already has the real name.
++			 */
++
++			resolved[save_resolved_len] = '\0';
++			resolved_len = strlcat(resolved, (const char *)&attrs.name + attrs.name.attr_dataoffset, PATH_MAX);
++			if (resolved_len >= PATH_MAX) {
++				errno = ENAMETOOLONG;
++				return (NULL);
++			}
+ 		}
++		/*
++		 * For the case of useattrs == 0, we could scan the directory
++		 * and try to match the inode.  There are many problems with
++		 * this: (1) the directory may not be readable, (2) for multiple
++		 * hard links, we would find the first, but not necessarily
++		 * the one specified in the path, (3) we can't try to do
++		 * a case-insensitive search to match the right one in (2),
++		 * because the underlying filesystem may do things like
++		 * decompose composed characters.  For most cases, doing
++		 * nothing is the right thing when useattrs == 0, so we punt
++		 * for now.
++		 */
+ 	}
+ 
+ 	/*

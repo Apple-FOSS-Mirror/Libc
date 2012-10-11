@@ -1,16 +1,19 @@
 .include "${.CURDIR}/include/arpa/Makefile.inc"
+.include "${.CURDIR}/include/libkern/Makefile.inc"
 .include "${.CURDIR}/include/protocols/Makefile.inc"
 .include "${.CURDIR}/include/malloc/Makefile.inc"
 .include "${.CURDIR}/include/objc/Makefile.inc"
+.include "${.CURDIR}/include/sys/Makefile.inc"
 
-# waiting for 2852915 to be reviewed/approved
-#		alloca.h
 INC_INSTHDRS += NSSystemDirectories.h \
+		_types.h \
+		aio.h \
 		alloca.h \
 		ar.h \
 		asm.h \
 		bitstring.h \
 		c.h \
+		cpio.h \
 		crt_externs.h \
 		ctype.h \
 		db.h \
@@ -19,10 +22,12 @@ INC_INSTHDRS += NSSystemDirectories.h \
 		err.h \
 		errno.h \
 		fcntl.h \
+		fmtmsg.h \
 		fnmatch.h \
 		fsproperties.h \
 		fstab.h \
 		fts.h \
+		ftw.h \
 		getopt.h \
 		glob.h \
 		grp.h \
@@ -79,7 +84,11 @@ INC_INSTHDRS += NSSystemDirectories.h \
 		utmp.h \
 		vis.h \
 		wchar.h \
-		wctype.h
+		wctype.h \
+		wordexp.h
+
+.PATH: ${.CURDIR}/include
+MAN3 += sysexits.3
 
 INC_INSTHDRS := ${INC_INSTHDRS:S/^/${.CURDIR}\/include\//}
 INSTHDRS += ${INC_INSTHDRS}

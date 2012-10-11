@@ -1,8 +1,13 @@
 #	from @(#)Makefile.inc	8.3 (Berkeley) 2/4/95
 # $FreeBSD: src/lib/libc/stdlib/Makefile.inc,v 1.45 2003/04/05 07:33:46 tjr Exp $
 
+# machine-dependent stdlib sources
+.if exists(${.CURDIR}/${MACHINE_ARCH}/stdlib/Makefile.inc)
+.include "${.CURDIR}/${MACHINE_ARCH}/stdlib/Makefile.inc"
+.endif
+
 # machine-independent stdlib sources
-.PATH: ${.CURDIR}/${MACHINE_ARCH}/stdlib ${.CURDIR}/stdlib
+.PATH: ${.CURDIR}/stdlib
 
 MISRCS+=a64l.c l64a.c
 
@@ -15,13 +20,8 @@ FBSDMISRCS=_Exit_.c abort.c abs.c atexit.c atof.c atoi.c atol.c atoll.c \
 	strfmon.c strhash.c strtoimax.c strtol.c strtoll.c strtoq.c strtoul.c \
 	strtoull.c strtoumax.c strtouq.c system.c tdelete.c tfind.c tsearch.c \
 	twalk.c
-FBSDORIGHDRS= atexit.h
+FBSDHDRS= atexit.h
 .include "Makefile.fbsd_end"
-
-# machine-dependent stdlib sources
-.if exists(${.CURDIR}/${MACHINE_ARCH}/stdlib/Makefile.inc)
-.include "${.CURDIR}/${MACHINE_ARCH}/stdlib/Makefile.inc"
-.endif
 
 .if ${LIB} == "c"
 MAN3+=	a64l.3

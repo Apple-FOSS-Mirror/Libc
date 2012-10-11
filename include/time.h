@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -65,9 +67,17 @@
 
 #include <machine/ansi.h>
 
-#ifndef	NULL
-#define	NULL	0
-#endif
+#ifndef NULL
+#ifdef __GNUG__
+#define NULL __null
+#else /* ! __GNUG__ */
+#ifndef __cplusplus
+#define NULL ((void *)0)
+#else /* __cplusplus */
+#define NULL 0
+#endif /* ! __cplusplus */
+#endif /* __GNUG__ */
+#endif /* ! NULL */
 
 #ifndef	_BSD_CLOCK_T_DEFINED_
 #define _BSD_CLOCK_T_DEFINED_

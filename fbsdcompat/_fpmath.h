@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -45,7 +47,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * $FreeBSD: /repoman/r/ncvs/src/lib/libc/i386/_fpmath.h,v 1.2 2003/04/05 22:10:13 das Exp $
+ * $FreeBSD: src/lib/libc/i386/_fpmath.h,v 1.3 2004/01/18 07:57:01 das Exp $
  */
 
 union IEEEl2bits {
@@ -60,6 +62,9 @@ union IEEEl2bits {
 };
 
 #define	mask_nbit_l(u)	((u).bits.manh &= 0x7fffffff)
+
+#define	LDBL_MANH_SIZE	32
+#define	LDBL_MANL_SIZE	32
 
 #define	LDBL_TO_ARRAY32(u, a) do {			\
 	(a)[0] = (uint32_t)(u).bits.manl;		\

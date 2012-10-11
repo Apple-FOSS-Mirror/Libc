@@ -4,9 +4,9 @@
 # compat-43 sources
 .PATH: ${.CURDIR}/${MACHINE_ARCH}/compat-43 ${.CURDIR}/compat-43
 
-SRCS+= setregid.c setreuid.c sigcompat.c
+MISRCS+= setregid.c setreuid.c sigcompat.c
 .include "Makefile.fbsd_begin"
-FBSDSRCS= creat.c gethostid.c getwd.c killpg.c sethostid.c setpgrp.c \
+FBSDMISRCS= creat.c gethostid.c getwd.c killpg.c sethostid.c setpgrp.c \
 	setrgid.c setruid.c
 .include "Makefile.fbsd_end"
 

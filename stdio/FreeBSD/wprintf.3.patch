@@ -4,9 +4,9 @@
  .Xr localeconv 3 .
  .El
  .It
-+An optional seperator character (
++An optional separator character (
 +.Cm \ , | \;  | \ : | _
-+) used for seperating multiple values when printing an AltiVec vector,
++) used for separating multiple values when printing an AltiVec vector,
 +or other multi-value unit.
 +.Pp
 +NOTE: This is an AltiVec only extension onto the

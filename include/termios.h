@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -20,5 +22,20 @@
  * 
  * @APPLE_LICENSE_HEADER_END@
  */
-#include <sys/termios.h>
+#ifndef __TERMIOS_H__
+#define __TERMIOS_H__
 
+#include <sys/cdefs.h>
+#include <sys/termios.h>
+#include <_types.h>
+
+#ifndef _PID_T_DECLARED
+typedef __osx_pid_t	pid_t;
+#define _PID_T_DECLARED
+#endif
+
+__BEGIN_DECLS
+pid_t	tcgetsid(int);
+__END_DECLS
+
+#endif /* __TERMIOS_H__ */

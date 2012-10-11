@@ -1,0 +1,178 @@
+--- vfscanf.c.orig	Tue Nov 18 16:48:06 2003
++++ vfscanf.c	Tue Nov 18 17:35:55 2003
+@@ -99,7 +99,9 @@
+ #define	CT_FLOAT	4	/* %[efgEFG] conversion */
+ 
+ static const u_char *__sccl(char *, const u_char *);
+-static int parsefloat(FILE *, char *, char *);
++#ifdef FLOATING_POINT
++static int parsefloat(FILE *, char **, size_t);
++#endif /* FLOATING_POINT */
+ 
+ int __scanfdebug = 0;
+ 
+@@ -133,7 +135,6 @@
+ 	int flags;		/* flags as defined above */
+ 	char *p0;		/* saves original value of p when necessary */
+ 	int nassigned;		/* number of fields assigned */
+-	int nconversions;	/* number of conversions */
+ 	int nread;		/* number of characters consumed from fp */
+ 	int base;		/* base argument to conversion function */
+ 	char ccltab[256];	/* character class table for %[...] */
+@@ -150,7 +151,6 @@
+ 	ORIENT(fp, -1);
+ 
+ 	nassigned = 0;
+-	nconversions = 0;
+ 	nread = 0;
+ 	for (;;) {
+ 		c = *fmt++;
+@@ -288,7 +288,6 @@
+ 			break;
+ 
+ 		case 'n':
+-			nconversions++;
+ 			if (flags & SUPPRESS)	/* ??? */
+ 				continue;
+ 			if (flags & SHORTSHORT)
+@@ -421,7 +420,6 @@
+ 				nread += r;
+ 				nassigned++;
+ 			}
+-			nconversions++;
+ 			break;
+ 
+ 		case CT_CCL:
+@@ -525,7 +523,6 @@
+ 				nassigned++;
+ 			}
+ 			nread += n;
+-			nconversions++;
+ 			break;
+ 
+ 		case CT_STRING:
+@@ -607,7 +604,6 @@
+ 				nread += p - p0;
+ 				nassigned++;
+ 			}
+-			nconversions++;
+ 			continue;
+ 
+ 		case CT_INT:
+@@ -758,39 +754,42 @@
+ 				nassigned++;
+ 			}
+ 			nread += p - buf;
+-			nconversions++;
+ 			break;
+ 
+ #ifdef FLOATING_POINT
+ 		case CT_FLOAT:
++		{
++			char *pbuf;
+ 			/* scan a floating point number as if by strtod */
+-			if (width == 0 || width > sizeof(buf) - 1)
+-				width = sizeof(buf) - 1;
+-			if ((width = parsefloat(fp, buf, buf + width)) == 0)
++			if ((width = parsefloat(fp, &pbuf, width)) == 0) {
++				if (pbuf)
++					free(pbuf);
+ 				goto match_failure;
++			}
+ 			if ((flags & SUPPRESS) == 0) {
+ 				if (flags & LONGDBL) {
+-					long double res = strtold(buf, &p);
++					long double res = strtold(pbuf, &p);
+ 					*va_arg(ap, long double *) = res;
+ 				} else if (flags & LONG) {
+-					double res = strtod(buf, &p);
++					double res = strtod(pbuf, &p);
+ 					*va_arg(ap, double *) = res;
+ 				} else {
+-					float res = strtof(buf, &p);
++					float res = strtof(pbuf, &p);
+ 					*va_arg(ap, float *) = res;
+ 				}
+-				if (__scanfdebug && p - buf != width)
++				if (__scanfdebug && p - pbuf != width)
+ 					abort();
+ 				nassigned++;
+ 			}
+ 			nread += width;
+-			nconversions++;
++			free(pbuf);
+ 			break;
++		}
+ #endif /* FLOATING_POINT */
+ 		}
+ 	}
+ input_failure:
+-	return (nconversions != 0 ? nassigned : EOF);
++	return (nassigned ? nassigned : EOF);
+ match_failure:
+ 	return (nassigned);
+ }
+@@ -910,7 +909,7 @@
+ 
+ #ifdef FLOATING_POINT
+ static int
+-parsefloat(FILE *fp, char *buf, char *end)
++parsefloat(FILE *fp, char **buf, size_t width)
+ {
+ 	char *commit, *p;
+ 	int infnanpos = 0;
+@@ -921,7 +920,16 @@
+ 	unsigned char c;
+ 	char decpt = *localeconv()->decimal_point;
+ 	_Bool gotmantdig = 0, ishex = 0;
++	char *b, *e;
++	size_t s;
+ 
++	s = (width == 0 ? BUF : width + 1);
++	b = (char *)malloc(s);
++	if (b == NULL) {
++		*buf = NULL;
++		return 0;
++	}
++	e = b + (s - 1);
+ 	/*
+ 	 * We set commit = p whenever the string we have read so far
+ 	 * constitutes a valid representation of a floating point
+@@ -931,8 +939,8 @@
+ 	 * always necessary to read at least one character that doesn't
+ 	 * match; thus, we can't short-circuit "infinity" or "nan(...)".
+ 	 */
+-	commit = buf - 1;
+-	for (p = buf; p < end; ) {
++	commit = b - 1;
++	for (p = b; width == 0 || p < e; ) {
+ 		c = *fp->_p;
+ reswitch:
+ 		switch (state) {
+@@ -1046,6 +1054,17 @@
+ 		default:
+ 			abort();
+ 		}
++		if (p >= e) {
++			size_t diff = (p - b);
++			s += BUF;
++			b = (char *)reallocf(b, s);
++			if (b == NULL) {
++				*buf = NULL;
++				return 0;
++			}
++			e = b + (s - 1);
++			p = b + diff;
++		}
+ 		*p++ = c;
+ 		if (--fp->_r > 0)
+ 			fp->_p++;
+@@ -1057,6 +1076,7 @@
+ 	while (commit < --p)
+ 		__ungetc(*(u_char *)p, fp);
+ 	*++commit = '\0';
+-	return (commit - buf);
++	*buf = b;
++	return (commit - b);
+ }
+ #endif

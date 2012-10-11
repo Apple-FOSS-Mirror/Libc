@@ -23,85 +23,112 @@
 .MAIN: all
 all: libc.a libc_static.a libc_debug.a libc_profile.a
 install: installhdrs install_libc.a install_libc_static.a \
-	 install_libc_profile.a install_libc_debug.a fbsdman maninstall
+	 install_libc_profile.a install_libc_debug.a autopatchman maninstall
 
 .SUFFIXES:
-.SUFFIXES: .o .po .So .do .S .s -fbsd.c .c .cc .cpp .cxx .m .C .f .y .l .defs .h
+.SUFFIXES: .o .po .So .do .S .s .c .cc .cpp .cxx .m .C
+.SUFFIXES: -fbsd.c -uuid.c .3-uuid.in .3
+.SUFFIXES: .f .y .l .defs .h
 .SUFFIXES: User.c User.o User.po User.So User.do
 .SUFFIXES: Server.c Server.o Server.po Server.So Server.do
 
 OBJS+=  ${SRCS:N*.h:R:S/$/.o/g}
 POBJS+= ${OBJS:.o=.po} ${STATICOBJS:.o=.po}
 SOBJS+= ${OBJS:.o=.So}
+
+#### FreeBSD Rules ##################################################
 FBSDFLAGS= -I${.CURDIR}/fbsdcompat -include _fbsd_compat_.h
 
 -fbsd.c.o:
-	${CC} -static ${FBSDFLAGS} ${CFLAGS} -Os -c ${.IMPSRC} -o ${.TARGET}
-.c.o User.cUser.o Server.cServer.o:
-	${CC} -static ${CFLAGS} -Os -c ${.IMPSRC} -o ${.TARGET}
+	${CC} -static ${FBSDFLAGS} ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
 -fbsd.c.po:
-	${CC} -pg -DPROFILE ${FBSDFLAGS} ${CFLAGS} -Os -c ${.IMPSRC} \
-	    -o ${.TARGET}
-.c.po User.cUser.po Server.cServer.po:
-	${CC} -pg -DPROFILE ${CFLAGS} -Os -c ${.IMPSRC} -o ${.TARGET}
+	${CC} -pg -DPROFILE ${FBSDFLAGS} ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
 -fbsd.c.So: 
-	${CC} ${FBSDFLAGS} ${CFLAGS} -Os -c ${.IMPSRC} -o ${.TARGET}
-.c.So User.cUser.So Server.cServer.So: 
-	${CC} ${CFLAGS} -Os -c ${.IMPSRC} -o ${.TARGET}
+	${CC} ${FBSDFLAGS} ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
 -fbsd.c.do:
-	${CC} -g -DDEBUG ${FBSDFLAGS} ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
+	${CC} -g -DDEBUG ${FBSDFLAGS} ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -c ${.IMPSRC} -o ${.TARGET}
+
+#### UUID Rules ######################################################
+UUIDFLAGS= -I${.CURDIR}/uuid -include uuid-config.h
+
+-uuid.c.o:
+	${CC} -static ${UUIDFLAGS} ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
+-uuid.c.po:
+	${CC} -pg -DPROFILE ${UUIDFLAGS} ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
+-uuid.c.So: 
+	${CC} ${UUIDFLAGS} ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
+-uuid.c.do:
+	${CC} -g -DDEBUG ${UUIDFLAGS} ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -c ${.IMPSRC} -o ${.TARGET}
+.3-uuid.in.3:
+	sed -f ${.CURDIR}/uuid/uuidman.sed ${.IMPSRC} > ${.TARGET}
+
+#### Standard C Rules #################################################
+.c.o User.cUser.o Server.cServer.o:
+	${CC} -static ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
+.c.po User.cUser.po Server.cServer.po:
+	${CC} -pg -DPROFILE ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
+.c.So User.cUser.So Server.cServer.So: 
+	${CC} ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
 .c.do User.cUser.do Server.cServer.do:
-	${CC} -g -DDEBUG ${CFLAGS} -c ${.IMPSRC} -o ${.TARGET}
--fbsd.s.o:
-	${CC} -x assembler-with-cpp ${FBSDFLAGS} ${CFLAGS:M-[BID]*} \
-	    -static ${AINC} -c ${.IMPSRC} -o ${.TARGET}
+	${CC} -g -DDEBUG ${CFLAGS} ${CFLAGS-${.IMPSRC:T}} \
+	    -c ${.IMPSRC} -o ${.TARGET}
+
+#### Standard Assembler Rules #########################################
 .s.o:
-	${CC} -x assembler-with-cpp ${CFLAGS:M-[BID]*} -static ${AINC} -c \
-	    ${.IMPSRC} -o ${.TARGET}
--fbsd.s.po:
-	${CC} -pg -DPROFILE -x assembler-with-cpp ${FBSDFLAGS} \
-	    ${CFLAGS:M-[BID]*} -Os ${AINC} -c ${.IMPSRC} -o ${.TARGET}
+	${CC} -static -x assembler-with-cpp ${CFLAGS:M-[BIDF]*} \
+	    ${CFLAGS-${.IMPSRC:T}:M-[BIDF]*} ${AINC} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
 .s.po:
-	${CC} -pg -DPROFILE -x assembler-with-cpp ${CFLAGS:M-[BID]*} -Os \
-	    ${AINC} -c ${.IMPSRC} -o ${.TARGET}
--fbsd.s.So:
-	${CC} -x assembler-with-cpp ${FBSDFLAGS} \
-	    ${CFLAGS:M-[BID]*} -Os ${AINC} -c ${.IMPSRC} -o ${.TARGET}
+	${CC} -pg -DPROFILE -x assembler-with-cpp ${CFLAGS:M-[BIDF]*} \
+	    ${CFLAGS-${.IMPSRC:T}:M-[BIDF]*} ${AINC} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
 .s.So:
-	${CC} -x assembler-with-cpp \
-	    ${CFLAGS:M-[BID]*} -Os ${AINC} -c ${.IMPSRC} -o ${.TARGET}
--fbsd.s.do:
-	${CC} -DDEBUG -g -x assembler-with-cpp ${FBSDFLAGS} ${CFLAGS:M-[BID]*} \
-	    ${AINC} -c ${.IMPSRC} -o ${.TARGET}
+	${CC} -x assembler-with-cpp ${CFLAGS:M-[BIDF]*} \
+	    ${CFLAGS-${.IMPSRC:T}:M-[BIDF]*} ${AINC} \
+	    -Os -c ${.IMPSRC} -o ${.TARGET}
 .s.do:
-	${CC} -DDEBUG -g -x assembler-with-cpp ${CFLAGS:M-[BID]*} ${AINC} -c \
-	    ${.IMPSRC} -o ${.TARGET}
+	${CC} -g -DDEBUG -x assembler-with-cpp ${CFLAGS:M-[BIDF]*} \
+	    ${CFLAGS-${.IMPSRC:T}:M-[BIDF]*} ${AINC} \
+	    -c ${.IMPSRC} -o ${.TARGET}
+
+#### mig Rules ########################################################
 .defs.h .defsUser.c .defsServer.c:
 	mig -arch ${MACHINE_ARCH} -user ${.PREFIX}User.c -server ${.PREFIX}Server.c -header ${.PREFIX}.h ${.IMPSRC}
 
 gen_mig_defs: ${SRVMIGHDRS} ${MIGHDRS}
 gen_md_mig_defs: ${MD_MIGHDRS}
 
-lib${LIB}_static.a:: ${FBSDHDRS} ${OBJS} ${STATICOBJS} 
+lib${LIB}_static.a:: ${OBJS} ${STATICOBJS} 
 	@${ECHO} building static ${LIB} library
 	@rm -f lib${LIB}_static.a
 	@${AR} cq lib${LIB}_static.a `lorder ${OBJS} ${STATICOBJS} | tsort -q` ${ARADD}
 	${RANLIB} lib${LIB}_static.a
 
-lib${LIB}_profile.a:: ${FBSDHDRS} ${POBJS} 
+lib${LIB}_profile.a:: ${POBJS} 
 	@${ECHO} building profiled ${LIB} library
 	@rm -f lib${LIB}_profile.a
 	@${AR} cq lib${LIB}_profile.a `lorder ${POBJS} | tsort -q` ${ARADD}
 	${RANLIB} lib${LIB}_profile.a
 
 DOBJS+= ${OBJS:.o=.do}
-lib${LIB}_debug.a:: ${FBSDHDRS} ${DOBJS}
+lib${LIB}_debug.a:: ${DOBJS}
 	@${ECHO} building debug ${LIB} library
 	@rm -f lib${LIB}_debug.a
 	@${AR} cq lib${LIB}_debug.a `lorder ${DOBJS} | tsort -q` ${ARADD}
 	${RANLIB} lib${LIB}_debug.a
 
-lib${LIB}.a:: ${FBSDHDRS} ${SOBJS}
+lib${LIB}.a:: ${SOBJS}
 	@${ECHO} building standard ${LIB} library
 	@rm -f lib${LIB}.a
 	@${AR} cq lib${LIB}.a `lorder ${SOBJS} | tsort -q` ${ARADD}
@@ -118,33 +145,48 @@ installhdrs-md: gen_md_mig_defs
 	mkdir -p ${INCDIR}/mach/${MACHINE_ARCH}
 	${INSTALL} -c -m 444 ${MD_MIGHDRS} ${INCDIR}/mach/${MACHINE_ARCH}
 
-installhdrs: ${FBSDHDRS} gen_mig_defs
+installhdrs: autopatchhdrs gen_mig_defs
 	mkdir -p ${INCDIR}/arpa
+	mkdir -p ${INCDIR}/libkern
 	mkdir -p ${INCDIR}/mach
 	mkdir -p ${INCDIR}/malloc
 	mkdir -p ${INCDIR}/objc
 	mkdir -p ${INCDIR}/protocols
 	mkdir -p ${INCDIR}/servers
+	mkdir -p ${INCDIR}/sys
 	${INSTALL} -c -m 444 ${INSTHDRS} ${INCDIR}
 	${INSTALL} -c -m 444 ${ARPA_INSTHDRS} ${INCDIR}/arpa
+	${INSTALL} -c -m 444 ${LIBKERN_INSTHDRS} ${INCDIR}/libkern
 	${INSTALL} -c -m 444 ${MACH_INSTHDRS} ${INCDIR}/mach
 	${INSTALL} -c -m 444 ${MALLOC_INSTHDRS} ${INCDIR}/malloc
 	${INSTALL} -c -m 444 ${OBJC_INSTHDRS} ${INCDIR}/objc
 	${INSTALL} -c -m 444 ${PROTO_INSTHDRS} ${INCDIR}/protocols
 	${INSTALL} -c -m 444 ${SRVHDRS} ${INCDIR}/servers
+	${INSTALL} -c -m 444 ${SYS_INSTHDRS} ${INCDIR}/sys
 	mkdir -p ${LOCINCDIR}
 	${INSTALL} -c -m 444 ${LOCALHDRS} ${LOCINCDIR}
 	mkdir -p ${PRIVHDRS}/architecture/ppc
 	mkdir -p ${PRIVHDRS}/btree
 	mkdir -p ${PRIVHDRS}/machine
 	mkdir -p ${PRIVHDRS}/objc
+	mkdir -p ${PRIVHDRS}/sys
 	${INSTALL} -c -m 444 ${SRCROOT}/ppc/sys/processor_facilities.h ${PRIVHDRS}/architecture/ppc
-	${INSTALL} -c -m 444 ${SRCROOT}/db/btree/btree.h ${PRIVHDRS}/btree
-	${INSTALL} -c -m 444 ${SRCROOT}/db/btree/bt_extern.h ${PRIVHDRS}/btree
+	${INSTALL} -c -m 444 ${SYMROOT}/btree.h ${PRIVHDRS}/btree
+	${INSTALL} -c -m 444 ${SYMROOT}/bt_extern.h ${PRIVHDRS}/btree
 	${INSTALL} -c -m 444 ${SRCROOT}/internat/NXCType.h ${PRIVHDRS}/objc
 	${INSTALL} -c -m 444 ${SRCROOT}/gen/stack_logging.h ${PRIVHDRS}
 	mv ${DESTDIR}/usr/include/asm.h ${PRIVHDRS}/machine
 	mv ${INCDIR}/servers/srvbootstrap.h ${INCDIR}/servers/bootstrap.h
+	@for i in `find ${DESTDIR}/usr/include/mach ${DESTDIR}/usr/include/servers -name \*.h`; do \
+	    x=`fgrep '<mach/mig.h>' $$i | uniq -d`; \
+	    if [ -n "$$x" ]; then \
+		echo patching $$i; \
+		ed - $$i < ${SRCROOT}/fixdups.ed; \
+	    fi; \
+	done
+	${INSTALL} -c -m 444 ${SYS_INSTHDRS} ${PRIVHDRS}/sys
+	mkdir -p ${INCDIR}/uuid
+	${INSTALL} -c -m 444 ${SYMROOT}/uuid.h ${INCDIR}/uuid
 
 install_lib${LIB}_static.a:
 	${INSTALL} -c -m 444 lib${LIB}_static.a ${DESTDIR}/usr/local/lib/system/
@@ -155,7 +197,9 @@ install_lib${LIB}_debug.a:
 install_lib${LIB}.a:
 	${INSTALL} -c -m 444 lib${LIB}.a ${DESTDIR}/usr/local/lib/system/
 
-fbsdman: ${FBSDPATCHMAN}
+autopatch: autopatchhdrs ${AUTOPATCHSRCS}
+autopatchhdrs: ${AUTOPATCHHDRS}
+autopatchman: ${AUTOPATCHMAN}
 
 clean:
 	rm -f ${OBJS} ${POBJS} ${DOBJS} ${SOBJS} ${CLEANFILES}

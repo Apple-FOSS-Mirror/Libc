@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -63,31 +65,52 @@
 #ifndef _GRP_H_
 #define	_GRP_H_
 
+#include <sys/_types.h>
+
+#ifndef _GID_T_DECLARED
+typedef __gid_t         gid_t;		/* [XBD] */
+#define _GID_T_DECLARED
+#endif
+
+/*
+ * Although the definition of size_t is not mandated by [TSF], the function
+ * prototypes defined by [TSF] for the thread reentrant functions include
+ * it as a type for their 4th arguments, so we define it here.
+ */
+#ifndef _BSD_SIZE_T_DEFINED_
+#define _BSD_SIZE_T_DEFINED_
+typedef __size_t	size_t;		/* [???] */
+#endif
+
 #ifndef _POSIX_SOURCE
 #define	_PATH_GROUP		"/etc/group"
 #endif
 
 struct group {
-	char	*gr_name;		/* group name */
-	char	*gr_passwd;		/* group password */
-	gid_t	gr_gid;			/* group id */
-	char	**gr_mem;		/* group members */
+	char	*gr_name;		/* [XBD] group name */
+	char	*gr_passwd;		/* [???] group password */
+	gid_t	gr_gid;			/* [XBD] group id */
+	char	**gr_mem;		/* [XBD] group members */
 };
 
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
+/* [XBD] */
 struct group *getgrgid(gid_t);
 struct group *getgrnam(const char *);
+/* [TSF] */
 int getgrgid_r(gid_t, struct group *, char *, size_t, struct group **);
 int getgrnam_r(const char *, struct group *, char *, size_t, struct group **);
-#ifndef _POSIX_SOURCE
+/* [XSI] */
 struct group *getgrent(void);
+int setgrent(void);
+void endgrent(void);
+
+#ifndef _POSIX_SOURCE
 #ifndef _XOPEN_SOURCE
 char *group_from_gid(gid_t, int);
 #endif
-int setgrent(void);
-void endgrent(void);
 void setgrfile(const char *);
 int setgroupent(int);
 #endif

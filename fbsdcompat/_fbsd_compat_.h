@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -33,8 +35,6 @@
 #define	_BYTE_ORDER	BYTE_ORDER
 #define	_LITTLE_ENDIAN	LITTLE_ENDIAN
 #define	__ct_rune_t	ct_rune_t
-#define	__int32_t	int32_t
-#define	__int64_t	int64_t
 #define	__va_list	_BSD_VA_LIST_
 
 /*

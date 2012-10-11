@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -63,6 +65,8 @@
 #define	FNM_NOESCAPE	0x01	/* Disable backslash escaping. */
 #define	FNM_PATHNAME	0x02	/* Slash must be matched by slash. */
 #define	FNM_PERIOD	0x04	/* Period must be matched by period. */
+
+#define	FNM_NOSYS	(-1)	/* Reserved */
 
 #if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 #define FNM_LEADING_DIR 0x08    /* Ignore /<tail> after Imatch. */

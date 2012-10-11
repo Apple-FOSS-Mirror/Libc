@@ -1,25 +1,3 @@
-/*
- * Copyright (c) 2003 Apple Computer, Inc. All rights reserved.
- *
- * @APPLE_LICENSE_HEADER_START@
- * 
- * This file contains Original Code and/or Modifications of Original Code
- * as defined in and that are subject to the Apple Public Source License
- * Version 2.0 (the 'License'). You may not use this file except in
- * compliance with the License. Please obtain a copy of the License at
- * http://www.opensource.apple.com/apsl/ and read it before using this
- * file.
- * 
- * The Original Code and all software distributed under the License are
- * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
- * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
- * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
- * Please see the License for the specific language governing rights and
- * limitations under the License.
- * 
- * @APPLE_LICENSE_HEADER_END@
- */
 /*-
  * Copyright (c)1999 Citrus Project,
  * All rights reserved.
@@ -90,92 +68,102 @@
 #define _WCHAR_H_
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
+#include <_types.h>
 #include <stdarg.h>
+#include <stdio.h>
+#include <time.h>
 
 #ifndef NULL
-#define	NULL	0
-#endif
+#define	NULL	__OSX_NULL
+#endif /* ! NULL */
 
 #ifndef	_BSD_SIZE_T_DEFINED_
 #define	_BSD_SIZE_T_DEFINED_
-typedef	_BSD_SIZE_T_	size_t;
+typedef	__osx_size_t	size_t;
 #endif
 
 #ifndef	_BSD_MBSTATE_T_DEFINED_
 #define	_BSD_MBSTATE_T_DEFINED_
-typedef	_BSD_MBSTATE_T_	mbstate_t;
+typedef	__osx_mbstate_t	mbstate_t;
 #endif
 
 #ifndef	_BSD_CT_RUNE_T_DEFINED_
 #define _BSD_CT_RUNE_T_DEFINED_
-typedef	_BSD_CT_RUNE_T_	ct_rune_t;
+typedef	__osx_ct_rune_t	ct_rune_t;
 #endif
 
 #ifndef	_BSD_RUNE_T_DEFINED_
 #define _BSD_RUNE_T_DEFINED_
-typedef	_BSD_RUNE_T_	rune_t;
+typedef	__osx_rune_t	rune_t;
 #endif
 
 #ifndef	__cplusplus
 #ifndef	_BSD_WCHAR_T_DEFINED_
 #define	_BSD_WCHAR_T_DEFINED_
-#ifdef	__WCHAR_TYPE__
-typedef	__WCHAR_TYPE__	wchar_t;
-#else	/* ! __WCHAR_TYPE__ */
-typedef	_BSD_WCHAR_T_	wchar_t;
-#endif	/* __WCHAR_TYPE__ */
+typedef	__osx_wchar_t	wchar_t;
 #endif	/* _BSD_WCHAR_T_DEFINED_ */
 #endif	/* __cplusplus */
 
+#ifndef _WCTYPE_T_DEFINED_
+#define _WCTYPE_T_DEFINED_
+typedef	__osx_wctype_t	wctype_t;
+#endif
+
 #ifndef	_BSD_WINT_T_DEFINED_
 #define _BSD_WINT_T_DEFINED_
-typedef	_BSD_WINT_T_	wint_t;
+typedef	__osx_wint_t	wint_t;
 #endif
 
 #ifndef WEOF
-#define	WEOF 	((wint_t)-1)
+#define	WEOF 		__OSX_WEOF
 #endif
 
 #ifndef WCHAR_MIN
-#define WCHAR_MIN	0
+#define WCHAR_MIN	__OSX_WCHAR_MIN
 #endif
 
 #ifndef WCHAR_MAX
-#ifdef __WCHAR_MAX__
-#define WCHAR_MAX	__WCHAR_MAX__
-#else /* ! __WCHAR_MAX__ */
-#define WCHAR_MAX	0x7fffffff
-#endif /* __WCHAR_MAX__ */
+#define WCHAR_MAX	__OSX_WCHAR_MAX
 #endif
-
-struct __sFILE;
-struct tm;
 
 __BEGIN_DECLS
 wint_t	btowc(int);
-wint_t	fgetwc(struct __sFILE *);
-wchar_t	*fgetws(wchar_t * __restrict, int, struct __sFILE * __restrict);
-wint_t	fputwc(wchar_t, struct __sFILE *);
-int	fputws(const wchar_t * __restrict, struct __sFILE * __restrict);
-int	fwide(struct __sFILE *, int);
-int	fwprintf(struct __sFILE * __restrict, const wchar_t * __restrict, ...);
-int	fwscanf(struct __sFILE * __restrict, const wchar_t * __restrict, ...);
-wint_t	getwc(struct __sFILE *);
+wint_t	fgetwc(FILE *);
+wchar_t	*fgetws(wchar_t * __restrict, int, FILE * __restrict);
+wint_t	fputwc(wchar_t, FILE *);
+int	fputws(const wchar_t * __restrict, FILE * __restrict);
+int	fwide(FILE *, int);
+int	fwprintf(FILE * __restrict, const wchar_t * __restrict, ...);
+int	fwscanf(FILE * __restrict, const wchar_t * __restrict, ...);
+wint_t	getwc(FILE *);
 wint_t	getwchar(void);
+int	iswalnum(wint_t);
+int	iswalpha(wint_t);
+int	iswcntrl(wint_t);
+int	iswctype(wint_t, wctype_t);
+int	iswdigit(wint_t);
+int	iswgraph(wint_t);
+int	iswlower(wint_t);
+int	iswprint(wint_t);
+int	iswpunct(wint_t);
+int	iswspace(wint_t);
+int	iswupper(wint_t);
+int	iswxdigit(wint_t);
 size_t	mbrlen(const char * __restrict, size_t, mbstate_t * __restrict);
 size_t	mbrtowc(wchar_t * __restrict, const char * __restrict, size_t,
 	    mbstate_t * __restrict);
 int	mbsinit(const mbstate_t *);
 size_t	mbsrtowcs(wchar_t * __restrict, const char ** __restrict, size_t,
 	    mbstate_t * __restrict);
-wint_t	putwc(wchar_t, struct __sFILE *);
+wint_t	putwc(wchar_t, FILE *);
 wint_t	putwchar(wchar_t);
 int	swprintf(wchar_t * __restrict, size_t n, const wchar_t * __restrict,
 	    ...);
 int	swscanf(const wchar_t * __restrict, const wchar_t * __restrict, ...);
-wint_t	ungetwc(wint_t, struct __sFILE *);
-int	vfwprintf(struct __sFILE * __restrict, const wchar_t * __restrict,
+wint_t	towlower(wint_t);
+wint_t	towupper(wint_t);
+wint_t	ungetwc(wint_t, FILE *);
+int	vfwprintf(FILE * __restrict, const wchar_t * __restrict,
 	    _BSD_VA_LIST_);
 int	vswprintf(wchar_t * __restrict, size_t n, const wchar_t * __restrict,
 	    _BSD_VA_LIST_);
@@ -207,6 +195,8 @@ wchar_t	*wcstok(wchar_t * __restrict, const wchar_t * __restrict,
 long	 wcstol(const wchar_t * __restrict, wchar_t ** __restrict, int);
 unsigned long
 	 wcstoul(const wchar_t * __restrict, wchar_t ** __restrict, int);
+wctype_t
+	wctype(const char *);
 wchar_t	*wmemchr(const wchar_t *, wchar_t, size_t);
 int	wmemcmp(const wchar_t *, const wchar_t *, size_t);
 wchar_t	*wmemcpy(wchar_t * __restrict, const wchar_t * __restrict, size_t);
@@ -216,7 +206,7 @@ int	wprintf(const wchar_t * __restrict, ...);
 int	wscanf(const wchar_t * __restrict, ...);
 
 #if !defined(_ANSI_SOURCE)
-int	vfwscanf(struct __sFILE * __restrict, const wchar_t * __restrict,
+int	vfwscanf(FILE * __restrict, const wchar_t * __restrict,
 	    _BSD_VA_LIST_);
 int	vswscanf(const wchar_t * __restrict, const wchar_t * __restrict,
 	    _BSD_VA_LIST_);

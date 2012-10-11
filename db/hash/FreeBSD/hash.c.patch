@@ -1,0 +1,11 @@
+--- hash.c.orig	Thu Mar 21 14:46:26 2002
++++ hash.c	Sat Oct 18 18:30:33 2003
+@@ -58,7 +58,7 @@
+ #include <db.h>
+ #include "hash.h"
+ #include "page.h"
+-#include "extern.h"
++#include "hash_extern.h"
+ 
+ static int   alloc_segs(HTAB *, int);
+ static int   flush_meta(HTAB *);

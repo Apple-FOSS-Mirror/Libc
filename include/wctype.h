@@ -1,25 +1,3 @@
-/*
- * Copyright (c) 2003 Apple Computer, Inc. All rights reserved.
- *
- * @APPLE_LICENSE_HEADER_START@
- * 
- * This file contains Original Code and/or Modifications of Original Code
- * as defined in and that are subject to the Apple Public Source License
- * Version 2.0 (the 'License'). You may not use this file except in
- * compliance with the License. Please obtain a copy of the License at
- * http://www.opensource.apple.com/apsl/ and read it before using this
- * file.
- * 
- * The Original Code and all software distributed under the License are
- * distributed on an 'AS IS' basis, WITHOUT WARRANTY OF ANY KIND, EITHER
- * EXPRESS OR IMPLIED, AND APPLE HEREBY DISCLAIMS ALL SUCH WARRANTIES,
- * INCLUDING WITHOUT LIMITATION, ANY WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE, QUIET ENJOYMENT OR NON-INFRINGEMENT.
- * Please see the License for the specific language governing rights and
- * limitations under the License.
- * 
- * @APPLE_LICENSE_HEADER_END@
- */
 /*-
  * Copyright (c)1999 Citrus Project,
  * All rights reserved.
@@ -54,48 +32,43 @@
 #define	_WCTYPE_H_
 
 #include <sys/cdefs.h>
-#include <sys/types.h>
-
+#include <_types.h>
 #include <ctype.h>
 
 #ifndef	_BSD_CT_RUNE_T_DEFINED_
 #define _BSD_CT_RUNE_T_DEFINED_
-typedef	_BSD_CT_RUNE_T_	ct_rune_t;
+typedef	__osx_ct_rune_t	ct_rune_t;
 #endif
 
 #ifndef	_BSD_RUNE_T_DEFINED_
 #define _BSD_RUNE_T_DEFINED_
-typedef	_BSD_RUNE_T_	rune_t;
+typedef	__osx_rune_t	rune_t;
 #endif
 
 #ifndef	__cplusplus
 #ifndef	_BSD_WCHAR_T_DEFINED_
 #define	_BSD_WCHAR_T_DEFINED_
-#ifdef	__WCHAR_TYPE__
-typedef	__WCHAR_TYPE__	wchar_t;
-#else	/* ! __WCHAR_TYPE__ */
-typedef	_BSD_WCHAR_T_	wchar_t;
-#endif	/* __WCHAR_TYPE__ */
+typedef	__osx_wchar_t	wchar_t;
 #endif	/* _BSD_WCHAR_T_DEFINED_ */
 #endif	/* __cplusplus */
 
 #ifndef	_BSD_WINT_T_DEFINED_
 #define _BSD_WINT_T_DEFINED_
-typedef	_BSD_WINT_T_	wint_t;
+typedef	__osx_wint_t	wint_t;
 #endif
 
-#ifndef _WCTRANS_T
-typedef	int	wctrans_t;
-#define	_WCTRANS_T
+#ifndef _WCTRANS_T_DEFINED_
+#define	_WCTRANS_T_DEFINED_
+typedef	__osx_wctrans_t	wctrans_t;
 #endif
 
-#ifndef _WCTYPE_T
-typedef	unsigned long	wctype_t;
-#define	_WCTYPE_T
+#ifndef _WCTYPE_T_DEFINED_
+#define	_WCTYPE_T_DEFINED_
+typedef	__osx_wctype_t	wctype_t;
 #endif
 
 #ifndef WEOF
-#define	WEOF	((wint_t)-1)
+#define	WEOF		__OSX_WEOF
 #endif
 
 __BEGIN_DECLS

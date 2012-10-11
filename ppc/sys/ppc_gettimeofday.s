@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -28,23 +30,18 @@
 #include <machine/cpu_capabilities.h>
 #undef	__APPLE_API_PRIVATE
 
-LEAF(___commpage_gettimeofday)
+MI_ENTRY_POINT(___commpage_gettimeofday)
     ba	_COMM_PAGE_GETTIMEOFDAY
 
-	.globl cerror
-LEAF(___ppc_gettimeofday)
-        li      r0,SYS_gettimeofday               
-	mr	r12,r3				
-        sc                                      
-        b       1f                              
-        b       2f                              
-1:      BRANCH_EXTERN(cerror)                   
-2:     
-	mr.	r12,r12
-	beq	3f
-	stw	r3,0(r12)
-	stw	r4,4(r12)
-	li	r3,0
+    
+MI_ENTRY_POINT(___ppc_gettimeofday)
+    mr      r12,r3              // save ptr to timeval
+    SYSCALL_NONAME(gettimeofday,0)
+	mr.     r12,r12             // was timeval ptr null?
+	beq     3f
+	stw     r3,0(r12)
+	stw     r4,4(r12)
+	li      r3,0
 3:
 	blr
 

@@ -1,0 +1,20 @@
+--- ndbm.c.orig	Wed Oct 22 19:07:02 2003
++++ ndbm.c	Wed Dec 17 09:24:33 2003
+@@ -51,6 +51,7 @@
+ #include <string.h>
+ #include <errno.h>
+ 
++#include <db.h>
+ #include <ndbm.h>
+ #include "hash.h"
+ 
+@@ -62,7 +63,8 @@
+ extern DBM *
+ dbm_open(file, flags, mode)
+ 	const char *file;
+-	int flags, mode;
++	int flags;
++	mode_t mode;
+ {
+ 	HASHINFO info;
+ 	char path[MAXPATHLEN];

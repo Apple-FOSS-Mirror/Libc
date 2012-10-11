@@ -4,7 +4,7 @@ MAINTAINER=	rwatson@FreeBSD.org
 
 .PATH: ${.CURDIR}/../libc/posix1e
 
-SRCS+=	acl_calc_mask.c			\
+MISRCS+= acl_calc_mask.c			\
 	acl_copy.c			\
 	acl_delete.c			\
 	acl_delete_entry.c		\

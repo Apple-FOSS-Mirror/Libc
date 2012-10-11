@@ -1,15 +1,20 @@
 #	@(#)Makefile.inc	8.1 (Berkeley) 6/4/93
 # $FreeBSD: src/lib/libc/string/Makefile.inc,v 1.32 2002/11/18 09:50:56 ru Exp $
 
-.PATH: ${.CURDIR}/${MACHINE_ARCH}/string ${.CURDIR}/string
+# machine-dependent string sources
+.if exists(${.CURDIR}/${MACHINE_ARCH}/string/Makefile.inc)
+.include "${.CURDIR}/${MACHINE_ARCH}/string/Makefile.inc"
+.endif
+
+.PATH: ${.CURDIR}/string
 
 CFLAGS+= -I${.CURDIR}/locale
 
 .include "Makefile.fbsd_begin"
 # machine-independent string sources
-FBSDMISRCS+=bcmp.c bcopy.c bzero.c ffs.c index.c memccpy.c memchr.c memcmp.c \
-	memcpy.c memmove.c memset.c rindex.c stpcpy.c strcasecmp.c strcat.c \
-	strchr.c strcmp.c strcoll.c strcpy.c strcspn.c strdup.c strerror.c \
+FBSDMISRCS+=bcmp.c ffs.c index.c memccpy.c memchr.c memcmp.c \
+	memset.c rindex.c stpcpy.c strcasecmp.c strcat.c \
+	strchr.c strcoll.c strcpy.c strcspn.c strdup.c strerror.c \
 	strlcat.c strlcpy.c strlen.c strmode.c strncat.c strncmp.c strncpy.c \
 	strcasestr.c strnstr.c \
 	strpbrk.c strrchr.c strsep.c strsignal.c strspn.c strstr.c strtok.c \
@@ -20,11 +25,6 @@ FBSDMISRCS+=bcmp.c bcopy.c bzero.c ffs.c index.c memccpy.c memchr.c memcmp.c \
 	wmemcmp.c \
 	wmemcpy.c wmemmove.c wmemset.c
 .include "Makefile.fbsd_end"
-
-# machine-dependent string sources
-.if exists(${.CURDIR}/${MACHINE_ARCH}/string/Makefile.inc)
-.include "${.CURDIR}/${MACHINE_ARCH}/string/Makefile.inc"
-.endif
 
 .if ${LIB} == "c"
 .include "Makefile.fbsd_begin"

@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -113,6 +115,9 @@ typedef struct _pthread
 	LIST_ENTRY(_pthread) plist;
 } *pthread_t;
 
+// suppress pthread_t typedef in signal.h
+#define _PTHREAD_T_DECLARED
+
 /*
  * This will cause a compile-time failure if someone moved the tsd field
  * and we need to change _PTHREAD_TSD_OFFSET in pthread_machdep.h
@@ -137,6 +142,9 @@ typedef struct
         size_t         stacksize;      /* Size of the stack (is a multiple of vm_page_size and >= PTHREAD_STACK_MIN) */
 	boolean_t      freeStackOnExit;/* Should we free the stack when we exit? */
 } pthread_attr_t;
+
+// suppress pthread_attr_t typedef in sys/signal.h
+#define _PTHREAD_ATTR_T_DECLARED
 
 /*
  * Mutex attributes

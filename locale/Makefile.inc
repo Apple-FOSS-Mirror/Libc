@@ -5,7 +5,7 @@
 .PATH: ${.CURDIR}/${MACHINE_ARCH}/locale ${.CURDIR}/locale
 
 .include "Makefile.fbsd_begin"
-FBSDSRCS= big5.c btowc.c collate.c collcmp.c euc.c fix_grouping.c frune.c \
+FBSDMISRCS= big5.c btowc.c collate.c collcmp.c euc.c fix_grouping.c frune.c \
 	isctype.c iswctype.c \
 	ldpart.c lmessages.c lmonetary.c lnumeric.c localeconv.c mblen.c \
 	mbrlen.c \
@@ -18,14 +18,13 @@ FBSDSRCS= big5.c btowc.c collate.c collcmp.c euc.c fix_grouping.c frune.c \
 	wcstombs.c \
 	wcstoul.c wcstoull.c wcstoumax.c wctob.c wctomb.c wctrans.c wctype.c \
 	wcwidth.c
-FBSDORIGHDRS= collate.h ldpart.h lmessages.h lmonetary.h lnumeric.h setlocale.h
+FBSDHDRS= collate.h ldpart.h lmessages.h lmonetary.h lnumeric.h setlocale.h
 .include "Makefile.fbsd_end"
 
 # Begin hack for 3333969
 
-CFLAGS += -D__APPLE_PR_3333969_HACK__
-
-SRCS += lconv.c
+MISRCS += lconv.c
+CFLAGS-lconv.c += -D__APPLE_PR_3333969_HACK__
 
 # End hack for 3333969
 

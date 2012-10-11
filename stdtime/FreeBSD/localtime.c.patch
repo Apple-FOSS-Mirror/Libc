@@ -1,5 +1,5 @@
---- localtime.c.orig	Thu Aug  7 18:34:10 2003
-+++ localtime.c	Thu Aug  7 16:57:55 2003
+--- localtime.c.orig	Thu Oct 30 23:10:33 2003
++++ localtime.c	Thu Oct 30 23:25:06 2003
 @@ -24,6 +24,18 @@
  #include <sys/stat.h>
  #include <fcntl.h>
@@ -177,7 +177,7 @@
 +	 *----------------------------------------------------------------*/
 +	if (p->token >= 0)
 +		notify_cancel(p->token);
-+	if (*file == 0) {
++	if (!file || *file == 0) {
 +		/* no time zone file to monitor */
 +		p->token = -1;
 +		return;
@@ -367,12 +367,13 @@
  	lcl_is_set = (strlen(name) < sizeof(lcl_TZname));
  	if (lcl_is_set)
  		(void) strcpy(lcl_TZname, name);
-@@ -995,15 +1234,24 @@
+@@ -995,15 +1234,25 @@
  		lclptr->ttis[0].tt_gmtoff = 0;
  		lclptr->ttis[0].tt_abbrind = 0;
  		(void) strcpy(lclptr->chars, gmt);
 +#ifdef NOTIFY_TZ
-+		*fullname = 0;
++		if (fullname)
++			*fullname = 0;
 +#endif /* NOTIFY_TZ */
  	} else if (tzload(name, lclptr) != 0)
  		if (name[0] == ':' || tzparse(name, lclptr, FALSE) != 0)
@@ -392,7 +393,7 @@
  	_MUTEX_LOCK(&lcl_mutex);
  	tzset_basic();
  	_MUTEX_UNLOCK(&lcl_mutex);
-@@ -1030,6 +1278,9 @@
+@@ -1030,6 +1279,9 @@
  	int			i;
  	const time_t			t = *timep;
  
@@ -402,7 +403,7 @@
  	sp = lclptr;
  #ifdef ALL_STATE
  	if (sp == NULL) {
-@@ -1087,7 +1338,7 @@
+@@ -1087,7 +1339,7 @@
  
  	if (__isthreaded != 0) {
  		_pthread_mutex_lock(&localtime_mutex);
@@ -411,7 +412,7 @@
  			if (_pthread_key_create(&localtime_key, free) < 0) {
  				_pthread_mutex_unlock(&localtime_mutex);
  				return(NULL);
-@@ -1123,14 +1374,30 @@
+@@ -1123,14 +1375,30 @@
  const long		offset;
  struct tm * const	tmp;
  {
@@ -443,7 +444,7 @@
  	}
  	_MUTEX_UNLOCK(&gmt_mutex);
  	timesub(timep, offset, gmtptr, tmp);
-@@ -1145,7 +1412,7 @@
+@@ -1145,7 +1413,7 @@
  	else {
  #ifdef ALL_STATE
  		if (gmtptr == NULL)
@@ -452,7 +453,7 @@
  		else	tmp->TM_ZONE = gmtptr->chars;
  #endif /* defined ALL_STATE */
  #ifndef ALL_STATE
-@@ -1165,7 +1432,7 @@
+@@ -1165,7 +1433,7 @@
  
  	if (__isthreaded != 0) {
  		_pthread_mutex_lock(&gmtime_mutex);

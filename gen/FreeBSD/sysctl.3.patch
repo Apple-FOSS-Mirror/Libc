@@ -1,0 +1,40 @@
+Index: sysctl.3
+===================================================================
+RCS file: /cvs/root/Libc/gen/FreeBSD/sysctl.3,v
+retrieving revision 1.2
+diff -u -r1.2 sysctl.3
+--- sysctl.3	2003/05/20 22:21:03	1.2
++++ sysctl.3	2003/10/21 18:31:52
+@@ -181,13 +181,21 @@
+ }
+ .Ed
+ .Pp
++Note:  Implementation of 
++.Fn printkproc
++-- to print whatever data deemed necessary from the large
++.Vt kinfo_proc
++structure ( 
++.In sysctl.h
++) -- is left as an exercise for the reader.
++.Pp
+ The top level names are defined with a CTL_ prefix in
+ .Aq Pa sys/sysctl.h ,
+ and are as follows.
+ The next and subsequent levels down are found in the include files
+ listed here, and described in separate sections below.
+ .Pp
+-.Bl -column CTLXMACHDEPXXX "Next level namesXXXXXX" -offset indent
++.Bl -column CTLXMACHDEP "Next level names" -offset indent
+ .It Sy "Name	Next level names	Description"
+ .It "CTL\_DEBUG	sys/sysctl.h	Debugging"
+ .It "CTL\_VFS	sys/mount.h	File system"
+@@ -196,7 +204,8 @@
+ .It "CTL\_MACHDEP	sys/sysctl.h	Machine dependent"
+ .It "CTL\_NET	sys/socket.h	Networking"
+ .It "CTL\_USER	sys/sysctl.h	User-level"
+-.It "CTL\_VM	vm/vm_param.h	Virtual memory"
++.It "CTL\_VM	sys/resource.h	Virtual memory (struct loadavg)"
++.It "CTL\_VM	sys/vmmeter.h	Virtual memory (struct vmtotal)"
+ .El
+ .Pp
+ For example, the following retrieves the maximum number of processes allowed

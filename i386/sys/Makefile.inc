@@ -1,4 +1,5 @@
-SRCS+=  ATPgetreq.s \
+.PATH: ${.CURDIR}/i386/sys
+MDSRCS+=  ATPgetreq.s \
 	ATPgetrsp.s \
 	ATPsndreq.s \
 	ATPsndrsp.s \
@@ -26,6 +27,7 @@ SRCS+=  ATPgetreq.s \
 	audit.s \
 	auditctl.s \
 	auditon.s \
+	auditsvc.s \
 	bind.s \
 	cerror.s \
 	chdir.s \
@@ -45,11 +47,15 @@ SRCS+=  ATPgetreq.s \
 	fchmod.s \
 	fchown.s \
 	fcntl.s \
+	fgetxattr.s  \
 	fhopen.s \
+	flistxattr.s  \
 	flock.s \
 	fork.s \
 	fpathconf.s \
+	fremovexattr.s  \
 	fsctl.s \
+	fsetxattr.s  \
 	fstat.s \
 	fstatfs.s \
 	fstatv.s \
@@ -70,17 +76,18 @@ SRCS+=  ATPgetreq.s \
 	getgroups.s \
 	getitimer.s \
 	getpeername.s \
+	getpgid.s \
 	getpgrp.s \
 	getpid.s \
 	getppid.s \
 	getpriority.s \
 	getrlimit.s \
 	getrusage.s \
-	getpgid.s \
 	getsid.s \
 	getsockname.s \
 	getsockopt.s \
 	getuid.s \
+	getxattr.s  \
 	ioctl.s \
 	issetugid.s \
 	kevent.s \
@@ -89,9 +96,11 @@ SRCS+=  ATPgetreq.s \
 	kqueue_from_portset_np.s \
 	kqueue_portset_np.s \
 	ktrace.s \
+	lchown.s \
 	link.s \
 	lio_listio.s \
 	listen.s \
+	listxattr.s  \
 	load_shared_file.s \
 	lseek.s \
 	lstat.s \
@@ -123,12 +132,12 @@ SRCS+=  ATPgetreq.s \
 	open.s \
 	pathconf.s \
 	pipe.s \
-	pread.s \
 	posix_madvise.s \
+	pread.s \
 	profil.s \
-	pwrite.s \
-	ptrace.s \
 	pthread_sigmask.s \
+	ptrace.s \
+	pwrite.s \
 	quota.s \
 	quotactl.s \
 	read.s \
@@ -137,6 +146,7 @@ SRCS+=  ATPgetreq.s \
 	reboot.s \
 	recvfrom.s \
 	recvmsg.s \
+	removexattr.s  \
 	rename.s \
 	reset_shared_file.s \
 	revoke.s \
@@ -176,6 +186,7 @@ SRCS+=  ATPgetreq.s \
 	setsockopt.s \
 	settimeofday.s \
 	setuid.s \
+	setxattr.s  \
 	shmat.s \
 	shmctl.s \
 	shmdt.s \
@@ -207,3 +218,9 @@ SRCS+=  ATPgetreq.s \
 	wait4.s \
 	write.s \
 	writev.s 
+
+.for _src in fhopen.s getfh.s nfsclnt.s
+CFLAGS-${_src} += -DNFSCLIENT
+.endfor
+
+CFLAGS-nfssvc.s += -DNFSSERVER

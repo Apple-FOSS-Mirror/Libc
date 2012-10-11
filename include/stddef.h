@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -61,46 +63,32 @@
 #ifndef __STDDEF_H__
 #define __STDDEF_H__
 
-#include <machine/types.h>
-#include <machine/ansi.h>
+#include <_types.h>
 
-typedef	_BSD_PTRDIFF_T_	ptrdiff_t;
+#ifndef _PTRDIFF_T_DECLARED
+typedef	__osx_ptrdiff_t	ptrdiff_t;
+#define _PTRDIFF_T_DECLARED
+#endif
 
 #ifndef	_BSD_SIZE_T_DEFINED_
 #define	_BSD_SIZE_T_DEFINED_
-typedef	_BSD_SIZE_T_	size_t;
-#endif
-
-#ifndef	_BSD_CT_RUNE_T_DEFINED_
-#define _BSD_CT_RUNE_T_DEFINED_
-typedef	_BSD_CT_RUNE_T_	ct_rune_t;
-#endif
-
-#ifndef	_BSD_RUNE_T_DEFINED_
-#define _BSD_RUNE_T_DEFINED_
-typedef	_BSD_RUNE_T_	rune_t;
+typedef	__osx_size_t	size_t;
 #endif
 
 #ifndef	__cplusplus
 #ifndef	_BSD_WCHAR_T_DEFINED_
 #define	_BSD_WCHAR_T_DEFINED_
-#ifdef	__WCHAR_TYPE__
-typedef	__WCHAR_TYPE__	wchar_t;
-#else	/* ! __WCHAR_TYPE__ */
-typedef	_BSD_WCHAR_T_	wchar_t;
-#endif	/* __WCHAR_TYPE__ */
+typedef	__osx_wchar_t	wchar_t;
 #endif	/* _BSD_WCHAR_T_DEFINED_ */
 #endif	/* __cplusplus */
 
-#ifndef	_BSD_WINT_T_DEFINED_
-#define _BSD_WINT_T_DEFINED_
-typedef	_BSD_WINT_T_	wint_t;
-#endif
+#ifndef NULL
+#define NULL __OSX_NULL
+#endif /* ! NULL */
 
-#ifndef	NULL
-#define	NULL	0
+#ifndef __offsetof	/* Deprecated: for source compatability only */
+#define __offsetof(type, field) ((size_t)(&((type *)0)->field))
 #endif
-
-#define         offsetof(type, member)  __offsetof(type, member)
+#define offsetof(type, field) ((size_t)(&((type *)0)->field))
 
 #endif /* __STDDEF_H__ */

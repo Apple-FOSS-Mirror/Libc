@@ -3,6 +3,8 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
+ * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
+ * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -61,6 +63,7 @@
 #include <unistd.h>
 #include <limits.h>
 #include <signal.h>
+#include <sys/types.h>	/* temporary - need to fix correctly */
 
 #ifndef _POSIX_C_SOURCE
 #include <mach/mach_types.h>
@@ -79,11 +82,6 @@
  */
 
 /* These will be moved to unistd.h */
-
-
-/* These two should be defined also */
-#undef  _POSIX_THREAD_PROCESS_SHARED
-#undef  _POSIX_THREAD_SAFE_FUNCTIONS
 
 /*
  * Note: These data structures are meant to be opaque.  Only enough

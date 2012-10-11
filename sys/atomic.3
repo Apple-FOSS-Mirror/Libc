@@ -1,0 +1,97 @@
+.Dd May 26, 2004
+.Dt ATOMIC 3
+.Os Darwin
+.Sh NAME
+.Nm OSAtomicAdd32 ,
+.Nm OSAtomicIncrement32 ,
+.Nm OSAtomicDecrement32 ,
+.Nm OSAtomicOr32 ,
+.Nm OSAtomicAnd32 ,
+.Nm OSAtomicXor32 ,
+.Nm OSAtomicAdd64 ,
+.Nm OSAtomicIncrement64 ,
+.Nm OSAtomicDecrement64 ,
+.Nm OSAtomicCompareAndSwap32 ,
+.Nm OSAtomicCompareAndSwap64 ,
+.Nm OSAtomicTestAndSet ,
+.Nm OSAtomicTestAndClear
+.Nd atomic add, increment, decrement, or, and, xor, compare and swap, test and set, and test and clear
+.Sh LIBRARY
+.Lb libc
+.Sh SYNOPSIS
+.In libkern/OSAtomic.h
+.Ft int32_t
+.Fn OSAtomicAdd32 "int32_t theAmount, int32_t *theValue"
+.Ft int32_t
+.Fn OSAtomicIncrement32 "int32_t *theValue"
+.Ft int32_t
+.Fn OSAtomicDecrement32 "int32_t *theValue"
+.Ft int32_t
+.Fn OSAtomicOr32 "uint32_t theMask, uint32_t *theValue"
+.Ft int32_t
+.Fn OSAtomicAnd32 "uint32_t theMask, uint32_t *theValue"
+.Ft int32_t
+.Fn OSAtomicXor32 "uint32_t theMask, uint32_t *theValue"
+.Ft int64_t
+.Fn OSAtomicAdd64 "int64_t theAmount, int64_t *theValue"
+.Ft int64_t
+.Fn OSAtomicIncrement64 "int64_t *theValue"
+.Ft int64_t
+.Fn OSAtomicDecrement64 "int64_t *theValue"
+.Ft bool
+.Fn OSAtomicCompareAndSwap32 "int32_t oldValue" "int32_t newValue" "int32_t *theValue"
+.Ft bool
+.Fn OSAtomicCompareAndSwap64 "int64_t oldValue" "int64_t newValue" "int64_t *theValue"
+.Ft bool
+.Fn OSAtomicTestAndSet "uint32_t n, void *theAddress"
+.Ft bool
+.Fn OSAtomicTestAndClear "uint32_t n, void *theAddress"
+.Sh DESCRIPTION
+These functions are thread and multiprocessor safe, but do not incorporate memory barriers
+and thus cannot be used by themselves to synchronize shared memory other than the memory
+being operated on (ie,
+.Fa theValue
+and
+.Fa theAddress
+).  The logical (and, or, xor) and bit test operations are layered on top of the
+.Fn OSAtomicCompareAndSwap
+primitives.  The memory address
+.Fa theValue
+must be naturally aligned, ie 32-bit aligned for 32-bit operations and 64-bit
+aligned for 64-bit operations.  The 64-bit operations are only implemented for
+64-bit processes.
+.Pp
+.Fn OSAtomicCompareAndSwap32
+and
+.Fn OSAtomicCompareAndSwap64
+compare
+.Fa oldValue
+to
+.Fa *theValue ,
+and set
+.Fa *theValue
+to
+.Fa newValue
+if the comparison is equal.  The comparison and assignment
+occur as one atomic operation.
+.Pp
+.Fn OSAtomicTestAndSet
+and
+.Fn OSAtomicTestAndClear
+operate on bit (0x80 >> (
+.Fa n
+& 7)) of byte ((char*)
+.Fa theAddress
++ (
+.Fa n
+>> 3)).  They set the named bit to either 1 or 0, respectively.
+.Fa theAddress
+need not be aligned.
+.Sh RETURN VALUES
+The arithmetic and logical operations return the new value, after the operation has been performed.
+The compare-and-swap operations return true if the comparison was equal, ie if the swap occured.
+The bit test and set/clear operations return the original value of the bit.
+.Sh SEE ALSO
+.Xr atomicqueue 3 ,
+.Xr spinlock 3 ,
+.Xr barrier 3
