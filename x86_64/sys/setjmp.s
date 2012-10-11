@@ -72,10 +72,11 @@ LEAF(_setjmp, 0)
 	pushq	%rdi			// Preserve the jmp_buf across the call
 	movl	$1, %edi		// how = SIG_BLOCK
 	xorq	%rsi, %rsi	      // set = NULL
-	subq	$8, %rsp		// Allocate space for the return from sigprocmask
-	movq	%rsp, %rdx
+	subq	$16, %rsp		// Allocate space for the return from sigprocmask + 8 to align stack
+	movq	%rsp, %rdx		// oset = allocated space
 	CALL_EXTERN(_sigprocmask)
 	popq	%rax			// Save the mask
+	addq	$8, %rsp		// Restore the stack to before we align it
 	popq	%rdi			// jmp_buf (struct sigcontext *)
 	movq	%rax, JB_MASK(%rdi)
 L_do__setjmp:
@@ -93,8 +94,8 @@ LEAF(_longjmp, 0)
 	pushq	%rsi				// Preserve the value across the call
 	pushq	JB_MASK(%rdi)		// Put the mask on the stack
 	movq	$3, %rdi			// how = SIG_SETMASK
-	movq	%rsp, %rsi	  // set = address where we stored the mask
-	xorq	%rdx, %rdx		      // oset = NULL
+	movq	%rsp, %rsi			// set = address where we stored the mask
+	xorq	%rdx, %rdx			// oset = NULL
 	CALL_EXTERN_AGAIN(_sigprocmask)
 	addq	$8, %rsp
 	popq	%rsi				// Restore the value

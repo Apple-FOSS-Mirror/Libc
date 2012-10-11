@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2007 Apple Inc. All rights reserved.
  * Copyright (c) 2004-2006 Apple Computer, Inc. All rights reserved.
  *
  * @APPLE_LICENSE_HEADER_START@
@@ -81,19 +82,72 @@ DECLARE(_OSAtomicXor32)
 	ret
 
 
+// uint32_t OSAtomicAnd32Orig( uint32_t mask, uint32_t *value);
+DECLARE(_OSAtomicAnd32Orig)
+	movq	$(_COMM_PAGE_COMPARE_AND_SWAP32), %rcx
+	movl	%edi, %r11d	// save mask
+	movl	(%rsi), %eax	// get value
+	movq	%rsi, %rdx	// put ptr where compare-and-swap expects it
+1:
+	movl	%r11d, %esi	// original mask
+	movl	%eax, %edi	// old value
+	andl	%eax, %esi	// new value
+	call	*%rcx		// %edi=old value,  %esi=new value. %rdx=ptr
+	jnz	1b
+	movl	%edi, %eax
+	ret
+
+
+// uint32_t OSAtomicOr32Orig( uint32_t mask, uint32_t *value);
+DECLARE(_OSAtomicOr32Orig)
+	movq	$(_COMM_PAGE_COMPARE_AND_SWAP32), %rcx
+	movl	%edi, %r11d	// save mask
+	movl	(%rsi), %eax	// get value
+	movq	%rsi, %rdx	// put ptr where compare-and-swap expects it
+1:
+	movl	%r11d, %esi	// original mask
+	movl	%eax, %edi	// old value
+	orl	%eax, %esi	// new value
+	call	*%rcx		// %edi=old value,  %esi=new value. %rdx=ptr
+	jnz	1b
+	movl	%edi, %eax
+	ret
+	
+
+// uint32_t OSAtomicXor32Orig( uint32_t mask, uint32_t *value);
+DECLARE(_OSAtomicXor32Orig)
+	movq	$(_COMM_PAGE_COMPARE_AND_SWAP32), %rcx
+	movl	%edi, %r11d	// save mask
+	movl	(%rsi), %eax	// get value
+	movq	%rsi, %rdx	// put ptr where compare-and-swap expects it
+1:
+	movl	%r11d, %esi	// original mask
+	movl	%eax, %edi	// old value
+	xorl	%eax, %esi	// new value
+	call	*%rcx		// %edi=old value,  %esi=new value. %rdx=ptr
+	jnz	1b
+	movl	%edi, %eax
+	ret
+
+
 // bool OSAtomicCompareAndSwap32( int32_t old, int32_t new, int32_t *value);
+DECLARE(_OSAtomicCompareAndSwapInt)
 DECLARE(_OSAtomicCompareAndSwap32)
 	movq	$(_COMM_PAGE_COMPARE_AND_SWAP32), %rcx
 	call	*%rcx		// %edi=old value,  %esi=new value. %rdx=ptr
 	sete	%al
+	movzbl	%al,%eax	// widen in case caller assumes we return an int
 	ret
 
 
 // bool OSAtomicCompareAndSwap64( int64_t old, int64_t new, int64_t *value);
+DECLARE(_OSAtomicCompareAndSwapPtr)
+DECLARE(_OSAtomicCompareAndSwapLong)
 DECLARE(_OSAtomicCompareAndSwap64)
 	movq	$(_COMM_PAGE_COMPARE_AND_SWAP64), %rcx
 	call	*%rcx		// %rdi=old value,  %rsi=new value. %rdx=ptr
 	sete	%al
+	movzbl	%al,%eax	// widen in case caller assumes we return an int
 	ret
 
 
@@ -121,6 +175,7 @@ DECLARE(_OSAtomicTestAndSet)
 	xorl	$7, %edi	// bit position is numbered big endian
 	call	*%rax
 	setc	%al
+	movzbl	%al,%eax	// widen in case caller assumes we return an int
 	ret
 
 
@@ -130,12 +185,15 @@ DECLARE(_OSAtomicTestAndClear)
 	xorl	$7, %edi	// bit position is numbered big endian
 	call	*%rax
 	setc	%al
+	movzbl	%al,%eax	// widen in case caller assumes we return an int
 	ret
 
 // bool OSSpinLockTry( OSSpinLock *lock );
 	.align	2, 0x90
 	.globl	_OSSpinLockTry
+	.globl	__spin_lock_try
 _OSSpinLockTry:
+__spin_lock_try:
 	movq	$(_COMM_PAGE_SPINLOCK_TRY), %rax
 	jmp	*%rax
 
@@ -143,7 +201,11 @@ _OSSpinLockTry:
 // void OSSpinLockLock( OSSpinLock *lock );
 	.align	2, 0x90
 	.globl	_OSSpinLockLock
+	.globl	_spin_lock
+	.globl	__spin_lock
 _OSSpinLockLock:
+_spin_lock:
+__spin_lock:
 	movq	$(_COMM_PAGE_SPINLOCK_LOCK), %rax
 	jmp	*%rax
 
@@ -151,7 +213,11 @@ _OSSpinLockLock:
 // void OSSpinLockUnlock( OSSpinLock *lock );
 	.align	2, 0x90
 	.globl	_OSSpinLockUnlock
+	.globl	_spin_unlock
+	.globl	__spin_unlock
 _OSSpinLockUnlock:
+_spin_unlock:
+__spin_unlock:
 	movl	$0, (%rdi)
 	ret
 
@@ -160,4 +226,53 @@ _OSSpinLockUnlock:
 	.align	2, 0x90
 	.globl	_OSMemoryBarrier
 _OSMemoryBarrier:
+	movq	$(_COMM_PAGE_MEMORY_BARRIER), %rax
+	jmp	*%rax
+
+
+/*
+ *	typedef	volatile struct {
+ *		void	*opaque1;  <-- ptr to 1st queue element or null
+ *		long	 opaque2;  <-- generation count
+ *	} OSQueueHead;
+ *
+ * void  OSAtomicEnqueue( OSQueueHead *list, void *new, size_t offset);
+ */
+	.align	2
+	.globl	_OSAtomicEnqueue
+_OSAtomicEnqueue:		// %rdi == list head, %rsi == new, %rdx == offset
+	pushq	%rbx
+	movq	%rsi,%rbx	// %rbx == new
+	movq	%rdx,%rsi	// %rsi == offset
+	movq	(%rdi),%rax	// %rax == ptr to 1st element in Q
+	movq	8(%rdi),%rdx	// %rdx == current generation count
+1:
+	movq	%rax,(%rbx,%rsi)// link to old list head from new element
+	movq	%rdx,%rcx
+	incq	%rcx		// increment generation count
+	lock			// always lock for now...
+	cmpxchg16b (%rdi)	// ...push on new element
+	jnz	1b
+	popq	%rbx
 	ret
+	
+	
+/* void* OSAtomicDequeue( OSQueueHead *list, size_t offset); */
+	.align	2
+	.globl	_OSAtomicDequeue
+_OSAtomicDequeue:		// %rdi == list head, %rsi == offset
+	pushq	%rbx
+	movq	(%rdi),%rax	// %rax == ptr to 1st element in Q
+	movq	8(%rdi),%rdx	// %rdx == current generation count
+1:
+	testq	%rax,%rax	// list empty?
+	jz	2f		// yes
+	movq	(%rax,%rsi),%rbx // point to 2nd in Q
+	movq	%rdx,%rcx
+	incq	%rcx		// increment generation count
+	lock			// always lock for now...
+	cmpxchg16b (%rdi)	// ...pop off 1st element
+	jnz	1b
+2:
+	popq	%rbx
+	ret			// ptr to 1st element in Q still in %rax

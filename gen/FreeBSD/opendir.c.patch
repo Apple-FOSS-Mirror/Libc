@@ -1,5 +1,5 @@
---- opendir.c.orig	2004-11-25 11:38:01.000000000 -0800
-+++ opendir.c	2006-05-03 23:21:10.000000000 -0700
+--- opendir.c.orig	2007-01-24 14:10:41.000000000 -0800
++++ opendir.c	2007-01-28 01:37:51.000000000 -0800
 @@ -48,6 +48,7 @@
  #include <stdlib.h>
  #include <string.h>
@@ -40,7 +40,30 @@
  	if (_fcntl(fd, F_SETFD, FD_CLOEXEC) == -1 ||
  	    (dirp = malloc(sizeof(DIR) + sizeof(struct _telldir))) == NULL)
  		goto fail;
-@@ -269,7 +258,7 @@
+@@ -154,7 +143,11 @@
+ 				ddptr = buf + (len - space);
+ 			}
+ 
++#if __DARWIN_64_BIT_INO_T
++			n = __getdirentries64(fd, ddptr, space, &dirp->dd_td->seekoff);
++#else /* !__DARWIN_64_BIT_INO_T */
+ 			n = _getdirentries(fd, ddptr, space, &dirp->dd_seek);
++#endif /* __DARWIN_64_BIT_INO_T */
+ 			if (n > 0) {
+ 				ddptr += n;
+ 				space -= n;
+@@ -262,14 +255,18 @@
+ 		dirp->dd_buf = malloc(dirp->dd_len);
+ 		if (dirp->dd_buf == NULL)
+ 			goto fail;
++#if __DARWIN_64_BIT_INO_T
++		dirp->dd_td->seekoff = 0;
++#else /* !__DARWIN_64_BIT_INO_T */
+ 		dirp->dd_seek = 0;
++#endif /* __DARWIN_64_BIT_INO_T */
+ 		flags &= ~DTF_REWIND;
+ 	}
+ 
  	dirp->dd_loc = 0;
  	dirp->dd_fd = fd;
  	dirp->dd_flags = flags;

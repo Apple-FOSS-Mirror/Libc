@@ -77,32 +77,3 @@ LEAF(_##name, 0)					;\
 #define PSEUDO(pseudo, name, nargs)			\
 LEAF(_##pseudo, 0)					;\
 	UNIX_SYSCALL_NONAME(name, nargs)
-
-#if !defined(SYS_getdirentriesattr)
-#define SYS_getdirentriesattr 222
-#endif
-
-#if !defined(SYS_semsys)
-#define SYS_semsys      251
-#define SYS_msgsys      252
-#define SYS_shmsys      253
-#define SYS_semctl      254
-#define SYS_semget      255
-#define SYS_semop       256
-/*#define SYS_semconfig   257*/
-#define SYS_msgctl      258
-#define SYS_msgget      259
-#define SYS_msgsnd      260
-#define SYS_msgrcv      261
-#define SYS_shmat       262
-#define SYS_shmctl      263
-#define SYS_shmdt       264
-#define SYS_shmget      265
-#endif
-
-#if !defined(SYS___pthread_canceled)
-#define SYS___pthread_markcancel	332
-#define SYS___pthread_canceled		333
-#define SYS___semwait_signal		334
-#endif
-

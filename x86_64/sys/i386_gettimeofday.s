@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999-2005 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 1999-2006 Apple Computer, Inc. All rights reserved.
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
@@ -31,13 +31,3 @@
 LABEL(___commpage_gettimeofday)
 	movq	$(_COMM_PAGE_GETTIMEOFDAY),%rax
 	jmp		*%rax
-
-/*
- *	This syscall is special cased: the timeval is returned in rax:rdx.
- */
-LABEL(___gettimeofday)
-    UNIX_SYSCALL_NONAME(gettimeofday,0)
-    movq	%rax, (%rdi)
-    movl	%edx, 8(%rdi)
-    xorl	%eax, %eax
-	ret

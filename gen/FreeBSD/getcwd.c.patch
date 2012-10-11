@@ -1,6 +1,6 @@
---- getcwd.c.orig	2006-01-19 18:35:45.000000000 -0800
-+++ getcwd.c	2006-02-08 17:53:41.000000000 -0800
-@@ -54,7 +54,81 @@
+--- getcwd.c.orig	2006-06-07 17:42:52.000000000 -0700
++++ getcwd.c	2006-06-07 17:44:47.000000000 -0700
+@@ -54,12 +54,87 @@
  	(dp->d_name[0] == '.' && (dp->d_name[1] == '\0' || \
  	    (dp->d_name[1] == '.' && dp->d_name[2] == '\0')))
  
@@ -43,7 +43,9 @@
 +		}
 +	} else
 +		b = buf;
-+
+ 
+-char *
+-getcwd(pt, size)
 +	err = fcntl(fd, F_GETPATH, b);
 +	if (err) {
 +		save = errno;
@@ -80,10 +82,16 @@
 +	}
 +	return 0;
 +}
- 
- char *
- getcwd(pt, size)
-@@ -91,31 +165,23 @@
++
++__private_extern__ char *
++__private_getcwd(pt, size, usegetpath)
+ 	char *pt;
+ 	size_t size;
++	int usegetpath;
+ {
+ 	struct dirent *dp;
+ 	DIR *dir = NULL;
+@@ -91,31 +166,25 @@
  		}
  		ept = pt + size;
  	} else {
@@ -92,7 +100,7 @@
  			return (NULL);
  		ept = pt + ptsize;
  	}
- 	if (__getcwd(pt, ept - pt) == 0) {
+-	if (__getcwd(pt, ept - pt) == 0) {
 -		if (*pt != '/') {
 -			bpt = pt;
 -			ept = pt + strlen(pt) - 1;
@@ -102,10 +110,13 @@
 -				*ept-- = c;
 -			}
 -		}
- 		return (pt);
--	}
-+	} else if (errno == ERANGE) /* failed because buffer too small */
-+		return NULL;
+-		return (pt);
++	if (usegetpath) {
++		if (__getcwd(pt, ept - pt) == 0) {
++			return (pt);
++		} else if (errno == ERANGE) /* failed because buffer too small */
++			return NULL;
+ 	}
  	bpt = ept - 1;
  	*bpt = '\0';
  
@@ -120,3 +131,15 @@
  		goto err;
  	eup = up + MAXPATHLEN;
  	bup = up;
+@@ -259,3 +328,11 @@
+ 	errno = save_errno;
+ 	return (NULL);
+ }
++
++char *
++getcwd(pt, size)
++	char *pt;
++	size_t size;
++{
++	return __private_getcwd(pt, size, 1);
++}

@@ -1,5 +1,5 @@
---- vfprintf.c.orig	2004-11-25 11:38:35.000000000 -0800
-+++ vfprintf.c	2005-11-08 22:43:11.000000000 -0800
+--- vfprintf.c.orig	2006-10-01 00:03:16.000000000 -0700
++++ vfprintf.c	2006-10-01 00:21:05.000000000 -0700
 @@ -40,6 +40,8 @@
  #include <sys/cdefs.h>
  __FBSDID("$FreeBSD: src/lib/libc/stdio/vfprintf.c,v 1.68 2004/08/26 06:25:28 des Exp $");
@@ -94,7 +94,7 @@
  	if (ret >= 0 && __fflush(&fake))
  		ret = EOF;
  	if (fake._flags & __SERR)
-@@ -336,7 +365,7 @@
+@@ -336,14 +365,14 @@
   * that the wide char. string ends in a null character.
   */
  static char *
@@ -103,6 +103,14 @@
  {
  	static const mbstate_t initial;
  	mbstate_t mbs;
+ 	char buf[MB_LEN_MAX];
+ 	wchar_t *p;
+ 	char *convbuf, *mbp;
+-	size_t clen, nbytes;
++	size_t clen = 0, nbytes;
+ 
+ 	/*
+ 	 * Determine the number of bytes to output and allocate space for
 @@ -354,7 +383,7 @@
  		p = wcsarg;
  		mbs = initial;
@@ -130,7 +138,16 @@
  		if (clen == 0 || clen == (size_t)-1)
  			break;
  		mbp += clen;
-@@ -402,7 +431,21 @@
+@@ -395,6 +424,8 @@
+ /*
+  * MT-safe version
+  */
++__private_extern__ const char *__fix_nogrouping(const char *);
++
+ int
+ vfprintf(FILE * __restrict fp, const char * __restrict fmt0, va_list ap)
+ 
+@@ -402,7 +433,21 @@
  	int ret;
  
  	FLOCKFILE(fp);
@@ -153,7 +170,7 @@
  	FUNLOCKFILE(fp);
  	return (ret);
  }
-@@ -451,12 +494,15 @@
+@@ -451,12 +496,15 @@
  #define	PTRDIFFT	0x800		/* ptrdiff_t */
  #define	INTMAXT		0x1000		/* intmax_t */
  #define	CHARINT		0x2000		/* print char using int format */
@@ -171,7 +188,7 @@
  {
  	char *fmt;		/* format string */
  	int ch;			/* character from fmt */
-@@ -502,6 +548,11 @@
+@@ -502,6 +550,11 @@
  	int nseps;		/* number of group separators with ' */
  	int nrepeats;		/* number of repeats of the last group */
  #endif
@@ -183,7 +200,16 @@
  	u_long	ulval;		/* integer arguments %[diouxX] */
  	uintmax_t ujval;	/* %j, %ll, %q, %t, %z integers */
  	int base;		/* base for [diouxX] conversion */
-@@ -633,22 +684,23 @@
+@@ -599,7 +652,7 @@
+ #define	INTMAX_SIZE	(INTMAXT|SIZET|PTRDIFFT|LLONGINT)
+ #define SJARG() \
+ 	(flags&INTMAXT ? GETARG(intmax_t) : \
+-	    flags&SIZET ? (intmax_t)GETARG(size_t) : \
++	    flags&SIZET ? (intmax_t)GETARG(ssize_t) : \
+ 	    flags&PTRDIFFT ? (intmax_t)GETARG(ptrdiff_t) : \
+ 	    (intmax_t)GETARG(long long))
+ #define	UJARG() \
+@@ -633,22 +686,24 @@
  		val = GETARG (int); \
  	}
  
@@ -202,6 +228,7 @@
 +		errno = EBADF;
  		return (EOF);
 +	}
++	ORIENT(fp, -1);
  
  	/* optimise fprintf(stderr) (and other unbuffered Unix files) */
  	if ((fp->_flags & (__SNBF|__SWR|__SRW)) == (__SNBF|__SWR) &&
@@ -211,7 +238,7 @@
  
  	fmt = (char *)fmt0;
  	argtable = NULL;
-@@ -675,6 +727,9 @@
+@@ -675,6 +730,9 @@
  		}
  		if (ch == '\0')
  			goto done;
@@ -221,7 +248,7 @@
  		fmt++;		/* skip over '%' */
  
  		flags = 0;
-@@ -683,6 +738,9 @@
+@@ -683,6 +741,9 @@
  		prec = -1;
  		sign = '\0';
  		ox[1] = '\0';
@@ -231,7 +258,7 @@
  
  rflag:		ch = *fmt++;
  reswitch:	switch (ch) {
-@@ -698,6 +756,11 @@
+@@ -698,6 +759,11 @@
  		case '#':
  			flags |= ALT;
  			goto rflag;
@@ -243,18 +270,18 @@
  		case '*':
  			/*-
  			 * ``A negative field width argument is taken as a
-@@ -718,8 +781,8 @@
+@@ -718,8 +784,8 @@
  			goto rflag;
  		case '\'':
  			flags |= GROUPING;
 -			thousands_sep = *(localeconv()->thousands_sep);
 -			grouping = localeconv()->grouping;
 +			thousands_sep = *(localeconv_l(loc)->thousands_sep);
-+			grouping = localeconv_l(loc)->grouping;
++			grouping = __fix_nogrouping(localeconv_l(loc)->grouping);
  			goto rflag;
  		case '.':
  			if ((ch = *fmt++) == '*') {
-@@ -793,14 +856,18 @@
+@@ -793,14 +859,18 @@
  			flags |= LONGINT;
  			/*FALLTHROUGH*/
  		case 'c':
@@ -275,7 +302,7 @@
  				if (mbseqlen == (size_t)-1) {
  					fp->_flags |= __SERR;
  					goto error;
-@@ -817,6 +884,10 @@
+@@ -817,6 +887,10 @@
  			/*FALLTHROUGH*/
  		case 'd':
  		case 'i':
@@ -286,7 +313,7 @@
  			if (flags & INTMAX_SIZE) {
  				ujval = SJARG();
  				if ((intmax_t)ujval < 0) {
-@@ -835,6 +906,12 @@
+@@ -835,6 +909,12 @@
  #ifndef NO_FLOATING_POINT
  		case 'a':
  		case 'A':
@@ -299,7 +326,7 @@
  			if (ch == 'a') {
  				ox[1] = 'x';
  				xdigs = xdigs_lower;
-@@ -848,6 +925,12 @@
+@@ -848,6 +928,12 @@
  				prec++;
  			if (dtoaresult != NULL)
  				freedtoa(dtoaresult);
@@ -312,7 +339,7 @@
  			if (flags & LONGDBL) {
  				fparg.ldbl = GETARG(long double);
  				dtoaresult = cp =
-@@ -859,6 +942,7 @@
+@@ -859,6 +945,7 @@
  				    __hdtoa(fparg.dbl, xdigs, prec,
  				    &expt, &signflag, &dtoaend);
  			}
@@ -320,7 +347,7 @@
  			if (prec < 0)
  				prec = dtoaend - cp;
  			if (expt == INT_MAX)
-@@ -866,6 +950,12 @@
+@@ -866,6 +953,12 @@
  			goto fp_common;
  		case 'e':
  		case 'E':
@@ -333,7 +360,7 @@
  			expchar = ch;
  			if (prec < 0)	/* account for digit before decpt */
  				prec = DEFPREC + 1;
-@@ -874,10 +964,22 @@
+@@ -874,10 +967,22 @@
  			goto fp_begin;
  		case 'f':
  		case 'F':
@@ -356,7 +383,7 @@
  			expchar = ch - ('g' - 'e');
  			if (prec == 0)
  				prec = 1;
-@@ -886,6 +988,14 @@
+@@ -886,6 +991,14 @@
  				prec = DEFPREC;
  			if (dtoaresult != NULL)
  				freedtoa(dtoaresult);
@@ -371,7 +398,7 @@
  			if (flags & LONGDBL) {
  				fparg.ldbl = GETARG(long double);
  				dtoaresult = cp =
-@@ -899,6 +1009,7 @@
+@@ -899,6 +1012,7 @@
  				if (expt == 9999)
  					expt = INT_MAX;
  			}
@@ -379,7 +406,7 @@
  fp_common:
  			if (signflag)
  				sign = '-';
-@@ -993,6 +1104,10 @@
+@@ -993,6 +1107,10 @@
  			flags |= LONGINT;
  			/*FALLTHROUGH*/
  		case 'o':
@@ -390,7 +417,7 @@
  			if (flags & INTMAX_SIZE)
  				ujval = UJARG();
  			else
-@@ -1007,6 +1122,10 @@
+@@ -1007,6 +1125,10 @@
  			 * defined manner.''
  			 *	-- ANSI X3J11
  			 */
@@ -401,7 +428,7 @@
  			ujval = (uintmax_t)(uintptr_t)GETARG(void *);
  			base = 16;
  			xdigs = xdigs_lower;
-@@ -1025,7 +1144,7 @@
+@@ -1025,7 +1147,7 @@
  				if ((wcp = GETARG(wchar_t *)) == NULL)
  					cp = "(null)";
  				else {
@@ -410,7 +437,7 @@
  					if (convbuf == NULL) {
  						fp->_flags |= __SERR;
  						goto error;
-@@ -1056,6 +1175,10 @@
+@@ -1056,6 +1178,10 @@
  			flags |= LONGINT;
  			/*FALLTHROUGH*/
  		case 'u':
@@ -421,7 +448,7 @@
  			if (flags & INTMAX_SIZE)
  				ujval = UJARG();
  			else
-@@ -1068,6 +1191,10 @@
+@@ -1068,6 +1194,10 @@
  		case 'x':
  			xdigs = xdigs_lower;
  hex:
@@ -432,7 +459,24 @@
  			if (flags & INTMAX_SIZE)
  				ujval = UJARG();
  			else
-@@ -1112,6 +1239,11 @@
+@@ -1093,6 +1223,7 @@
+ 			 * ``The result of converting a zero value with an
+ 			 * explicit precision of zero is no characters.''
+ 			 *	-- ANSI X3J11
++			 * except for %#.0o and zero value
+ 			 */
+ 			cp = buf + BUF;
+ 			if (flags & INTMAX_SIZE) {
+@@ -1102,7 +1233,7 @@
+ 					    flags & GROUPING, thousands_sep,
+ 					    grouping);
+ 			} else {
+-				if (ulval != 0 || prec != 0)
++				if (ulval != 0 || prec != 0 || (flags & ALT))
+ 					cp = __ultoa(ulval, cp, base,
+ 					    flags & ALT, xdigs,
+ 					    flags & GROUPING, thousands_sep,
+@@ -1112,6 +1243,11 @@
  			if (size > BUF)	/* should never happen */
  				abort();
  			break;
@@ -444,7 +488,7 @@
  		default:	/* "%?" prints ?, unless ? is NUL */
  			if (ch == '\0')
  				goto done;
-@@ -1123,6 +1255,290 @@
+@@ -1123,6 +1259,290 @@
  			break;
  		}
  
@@ -735,7 +779,34 @@
  		/*
  		 * All reasonable formats wind up here.  At this point, `cp'
  		 * points to a string which (if not flags&LADJUST) should be
-@@ -1406,6 +1822,11 @@
+@@ -1178,7 +1598,7 @@
+ 				if (expt <= 0) {
+ 					PRINT(zeroes, 1);
+ 					if (prec || flags & ALT)
+-						PRINT(decimal_point, 1);
++						PRINT(decimal_point, strlen(decimal_point));
+ 					PAD(-expt, zeroes);
+ 					/* already handled initial 0's */
+ 					prec += expt;
+@@ -1203,14 +1623,14 @@
+ 							cp = dtoaend;
+ 					}
+ 					if (prec || flags & ALT)
+-						PRINT(decimal_point,1);
++						PRINT(decimal_point, strlen(decimal_point));
+ 				}
+ 				PRINTANDPAD(cp, dtoaend, prec, zeroes);
+ 			} else {	/* %[eE] or sufficiently long %[gG] */
+ 				if (prec > 1 || flags & ALT) {
+ 					buf[0] = *cp++;
+-					buf[1] = *decimal_point;
+-					PRINT(buf, 2);
++					PRINT(buf, 1);
++					PRINT(decimal_point, strlen(decimal_point));
+ 					PRINT(cp, ndig-1);
+ 					PAD(prec - ndig, zeroes);
+ 				} else	/* XeYYY */
+@@ -1406,6 +1826,11 @@
  			if (flags & LONGINT)
  				ADDTYPE(T_WINT);
  			else
@@ -747,7 +818,7 @@
  				ADDTYPE(T_INT);
  			break;
  		case 'D':
-@@ -1413,6 +1834,11 @@
+@@ -1413,6 +1838,11 @@
  			/*FALLTHROUGH*/
  		case 'd':
  		case 'i':
@@ -759,8 +830,11 @@
  			ADDSARG();
  			break;
  #ifndef NO_FLOATING_POINT
-@@ -1423,6 +1849,11 @@
+@@ -1421,8 +1851,14 @@
+ 		case 'e':
+ 		case 'E':
  		case 'f':
++		case 'F':
  		case 'g':
  		case 'G':
 +#ifdef VECTORS
@@ -771,7 +845,7 @@
  			if (flags & LONGDBL)
  				ADDTYPE(T_LONG_DOUBLE);
  			else
-@@ -1451,9 +1882,19 @@
+@@ -1451,9 +1887,19 @@
  			flags |= LONGINT;
  			/*FALLTHROUGH*/
  		case 'o':
@@ -791,7 +865,7 @@
  			ADDTYPE(TP_VOID);
  			break;
  		case 'S':
-@@ -1471,6 +1912,11 @@
+@@ -1471,6 +1917,11 @@
  		case 'u':
  		case 'X':
  		case 'x':
@@ -803,7 +877,7 @@
  			ADDUARG();
  			break;
  		default:	/* "%?" prints ?, unless ? is NUL */
-@@ -1537,7 +1983,7 @@
+@@ -1537,7 +1988,7 @@
  			(*argtable) [n].sizearg = va_arg (ap, size_t);
  			break;
  		    case TP_SIZET:
@@ -812,7 +886,7 @@
  			break;
  		    case T_INTMAXT:
  			(*argtable) [n].intmaxarg = va_arg (ap, intmax_t);
-@@ -1556,6 +2002,11 @@
+@@ -1556,6 +2007,11 @@
  			(*argtable) [n].longdoublearg = va_arg (ap, long double);
  			break;
  #endif

@@ -6,4 +6,7 @@ MDSRCS += \
        get_cpu_capabilities.s \
        pthread_set_self.s \
        pthread_self.s \
-       pthread_getspecific.s
+       pthread_getspecific.s \
+       start_wqthread.s \
+       thread_start.s
+

@@ -48,7 +48,7 @@
 #define JB_MASK         4
 #define JB_MXCSR        8
 #define JB_EBX          12
-#define JB_ECX          16
+#define JB_ONSTACK      16
 #define JB_EDX          20
 #define JB_EDI          24
 #define JB_ESI          28

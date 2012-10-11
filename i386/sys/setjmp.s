@@ -51,7 +51,7 @@
 #define JB_MASK		4
 #define JB_MXCSR	8
 #define JB_EBX		12
-#define JB_ECX		16
+#define JB_ONSTACK	16
 #define JB_EDX		20
 #define JB_EDI		24
 #define JB_ESI		28
@@ -76,15 +76,26 @@ LEAF(_sigsetjmp, 0)
 	jmp L_do__setjmp		// else _setjmp(jmpbuf); 
 	
 LEAF(_setjmp, 0)
-	subl	$4, %esp		// make space for return from sigprocmask
+	subl	$16, %esp		// make space for return from sigprocmask 
+							// + 12 to align stack
 	pushl	%esp			// oset
 	pushl	$0				// set = NULL
 	pushl	$1				// how = SIG_BLOCK
 	CALL_EXTERN(_sigprocmask)
 	movl	12(%esp),%eax	// save the mask
-	addl	$16, %esp		// restore original esp
+	addl	$28, %esp		// restore original esp
 	movl	4(%esp), %ecx		// jmp_buf (struct sigcontext *)
 	movl	%eax, JB_MASK(%ecx)
+
+	subl	$20, %esp		// temporary struct sigaltstack + 8 to 
+							// align stack
+	pushl	%esp			// oss
+	pushl	$0			// ss == NULL
+	CALL_EXTERN(_sigaltstack)	// get alternate signal stack info
+	movl	16(%esp), %eax		// oss->ss_flags
+	addl	$28, %esp			// Restore %esp
+	movl	%eax, JB_ONSTACK(%ecx)
+
 L_do__setjmp:
 	BRANCH_EXTERN(__setjmp)
 
@@ -97,13 +108,23 @@ LEAF(_siglongjmp, 0)
 LEAF(_longjmp, 0)
 	movl	4(%esp), %ecx		// address of jmp_buf (saved context)
 	movl	JB_MASK(%ecx),%eax	// get the mask
+	subl	$12, %esp			// Make sure the stack is 16-byte 
+								// aligned when we call sigprocmask
 	pushl	%eax				// store the mask
 	movl	%esp, %edx			// save the address where we stored the mask
 	pushl	$0					// oset = NULL
 	pushl	%edx				// set
 	pushl	$3					// how = SIG_SETMASK
 	CALL_EXTERN_AGAIN(_sigprocmask)
-	addl	$16, %esp			// restore original esp
+	addl	$28, %esp			// restore original esp
+
+	movl	4(%esp), %ecx		// address of jmp_buf
+	movl	JB_ONSTACK(%ecx), %eax	// ss_flags
+	subl	$8, %esp
+	pushl	%eax
+	CALL_EXTERN(__sigunaltstack)
+	addl	$12, %esp
+	
 L_do__longjmp:
 	BRANCH_EXTERN(__longjmp)	// else
 END(_longjmp)

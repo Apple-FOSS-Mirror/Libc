@@ -25,7 +25,6 @@
  * Call the comm page routines
  */
 
-#define __APPLE_API_PRIVATE
 #include <machine/cpu_capabilities.h>
 
 #include <architecture/i386/asm_help.h>

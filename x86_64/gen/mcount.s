@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 1999-2006 Apple Computer, Inc. All rights reserved.
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
@@ -23,30 +23,30 @@
 #import <architecture/i386/asm_help.h>
 
 .text
-        .globl mcount
+	.globl mcount
 mcount:
-        pushq   %rbp            // setup mcount's frame
-        movq    %rsp,%rbp
+	pushq	%rbp             // setup mcount's frame
+	movq	%rsp,    %rbp
+	subq	$64,     %rsp    // allocate space for storage and alignment
+	movq	%rax,  0(%rsp)
+	movq	%rdi,  8(%rsp)
+	movq	%rsi, 16(%rsp)
+	movq	%rdx, 24(%rsp)
+	movq	%rcx, 32(%rsp)
+	movq	%r8,  40(%rsp)
+	movq	%r9,  48(%rsp)
+	movq	(%rbp),  %rsi    // load the frame pointer of mcount's caller
+	movq	8(%rsi), %rsi    // load mcount's caller's return address
+	movq	8(%rbp), %rdi    // set up the selfpc parameter for moncount()
+	CALL_EXTERN(_moncount)   // call moncount()
+	movq	48(%rsp), %r9
+	movq	40(%rsp), %r8
+	movq	32(%rsp), %rcx
+	movq	24(%rsp), %rdx
+	movq	16(%rsp), %rsi
+	movq	 8(%rsp), %rdi
+	movq	 0(%rsp), %rax
 
-        // The compiler doesn't preserve registers when calling mcount
-        // so we have to ensure that we don't trash any.
-        subq	$8, %rsp		// maintain 16-byte alignment
-        pushq	%rdi
-        pushq	%rsi
-        pushq	%rax
-        
-        movq    (%rbp),%rax     // load the frame pointer of mcount's caller
-        movq    8(%rax),%rax    // load mcount's caller's return address
-        movq    8(%rbp),%rdi    // set up the selfpc parameter for moncount()
-        movq    %rax,%rsi       // set up the frompc parameter for moncount()
-        CALL_EXTERN(_moncount)  // call moncount()
-        
-        popq	%rax
-        popq	%rsi
-        popq	%rdi
-        // No need for an addq because we're restoring %rsp in the
-        // next instruction.
-
-        movq    %rbp,%rsp       // tear down mcount's frame
-        popq    %rbp
-        ret
+	movq	%rbp, %rsp
+	popq	%rbp             // tear down frame
+	ret

@@ -44,3 +44,5 @@
 #else
 #error Unsupported architecture
 #endif
+
+#define Honor_FLT_ROUNDS

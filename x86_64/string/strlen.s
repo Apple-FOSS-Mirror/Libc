@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 2005-2007 Apple Inc. All rights reserved.
  *
  * @APPLE_LICENSE_HEADER_START@
  *
@@ -36,8 +36,8 @@
         .align  4, 0x90
 _strlen:				// size_t strlen(char *b);
 	pxor	%xmm0,%xmm0		// zero %xmm0
-	movq	%rdi,%rcx		// copy ptr
-	movq	%rdi,%rdx		// make another copy
+	movl	%edi,%ecx		// copy low half of ptr
+	movq	%rdi,%rdx		// make another full copy
 	andq	$(-16),%rdi		// 16-byte align ptr
 	orl	$(-1),%eax
 	pcmpeqb	(%rdi),%xmm0		// check whole qw for 0s
@@ -53,9 +53,8 @@ _strlen:				// size_t strlen(char *b);
 
 LFoundIt:
 	bsf	%ecx,%eax		// find first 1-bit (ie, first 0-byte)
-	movq	%rdx,%rcx		// recover ptr to 1st byte in string
-	addq	%rdi,%rax		// get address of the 0-byte
-	subq	%rcx,%rax		// subtract address of 1st byte to get string length
+	subq	%rdx,%rdi		// get length to start of 16-byte block while we wait
+	addq	%rdi,%rax		// add bytes in 16-byte block
 	ret
 	
 // Loop over aligned 16-byte blocks:

@@ -30,45 +30,45 @@
 #include <tzfile.h>
 #include <sys/time.h>
 #include <errno.h>
-#include <sys/syscall.h>
 #include <unistd.h>
 
 #define	__APPLE_API_PRIVATE
 #include <machine/cpu_capabilities.h>
 #undef	__APPLE_API_PRIVATE
 
+extern int __gettimeofday(struct timeval *, struct timezone *);
+extern int __commpage_gettimeofday(struct timeval *);
 
-int gettimeofday (struct timeval *tp, struct timezone *tzp)
+int gettimeofday (struct timeval *tp, void *vtzp)
 {
-		extern int __gettimeofday(struct timeval *, struct timezone *);
-		extern int __commpage_gettimeofday(struct timeval *);
-        static int validtz = 0;
-        static struct timezone cached_tz = {0};
-        struct timeval atv;
-  
-        if (tp == NULL) {
-            if (tzp == NULL)
-                return	(0);
-            tp = &atv;
-        }
+	static int validtz = 0;
+	static struct timezone cached_tz = {0};
+	struct timezone *tzp = (struct timezone *)vtzp;
+	struct timeval atv;
 
-		if (__commpage_gettimeofday(tp)) {		/* first try commpage */
-			if (__gettimeofday(tp, tzp) < 0) {	/* if it fails, use syscall */
-				return (-1);
-			}
+	if (tp == NULL) {
+	    if (tzp == NULL)
+		return	(0);
+	    tp = &atv;
+	}
+
+	if (__commpage_gettimeofday(tp)) {		/* first try commpage */
+		if (__gettimeofday(tp, NULL) < 0) {	/* if it fails, use syscall */
+			return (-1);
 		}
+	}
 
-        if (tzp) {
-            if (validtz == 0)  {
-                struct tm *localtm = localtime ((time_t *)&tp->tv_sec);
-                cached_tz.tz_dsttime = localtm->tm_isdst;
-                cached_tz.tz_minuteswest =
-                    (-localtm->tm_gmtoff / SECSPERMIN) +
-                    (localtm->tm_isdst * MINSPERHOUR);
-                validtz = 1;
-            }
-            tzp->tz_dsttime = cached_tz.tz_dsttime;
-            tzp->tz_minuteswest = cached_tz.tz_minuteswest;
-        }
-        return (0);
+	if (tzp) {
+	    if (validtz == 0)  {
+		struct tm *localtm = localtime ((time_t *)&tp->tv_sec);
+		cached_tz.tz_dsttime = localtm->tm_isdst;
+		cached_tz.tz_minuteswest =
+		    (-localtm->tm_gmtoff / SECSPERMIN) +
+		    (localtm->tm_isdst * MINSPERHOUR);
+		validtz = 1;
+	    }
+	    tzp->tz_dsttime = cached_tz.tz_dsttime;
+	    tzp->tz_minuteswest = cached_tz.tz_minuteswest;
+	}
+	return (0);
 }

@@ -10,6 +10,8 @@ MDSRCS += bcopy.s \
 	bzero.s \
 	memcpy.s \
 	memmove.s \
+	strlcat.s \
+	strlcpy.s \
 	strlen.s \
 	strcpy.s \
 	strcmp.s \
@@ -17,4 +19,5 @@ MDSRCS += bcopy.s \
 	strncmp.s \
 	memcmp.s \
 	bcmp.s \
-	memset.s
+	memset.s \
+	ffs.s
