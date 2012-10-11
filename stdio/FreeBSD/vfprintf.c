@@ -38,7 +38,7 @@
 static char sccsid[] = "@(#)vfprintf.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: src/lib/libc/stdio/vfprintf.c,v 1.65 2004/05/02 10:55:05 das Exp $");
+__FBSDID("$FreeBSD: src/lib/libc/stdio/vfprintf.c,v 1.68 2004/08/26 06:25:28 des Exp $");
 
 /*
  * Actual printf innards.
@@ -642,7 +642,7 @@ __vfprintf(FILE *fp, const char *fmt0, va_list ap)
 	decimal_point = localeconv()->decimal_point;
 #endif
 	/* sorry, fprintf(read_only_file, "") returns EOF, not 0 */
-	if (cantwrite(fp))
+	if (prepwrite(fp) != 0)
 		return (EOF);
 
 	/* optimise fprintf(stderr) (and other unbuffered Unix files) */
@@ -1233,6 +1233,7 @@ number:			if ((dprec = prec) >= 0)
 done:
 	FLUSH();
 error:
+	va_end(orgap);
 #ifndef NO_FLOATING_POINT
 	if (dtoaresult != NULL)
 		freedtoa(dtoaresult);
@@ -1273,7 +1274,7 @@ __find_arguments (const char *fmt0, va_list ap, union arg **argtable)
 	 */
 #define ADDTYPE(type) \
 	((nextarg >= tablesize) ? \
-		__grow_type_table(nextarg, &typetable, &tablesize) : 0, \
+		__grow_type_table(nextarg, &typetable, &tablesize) : (void)0, \
 	(nextarg > tablemax) ? tablemax = nextarg : 0, \
 	typetable[nextarg++] = type)
 

@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -43,6 +41,7 @@
 #if DEBUG_MALLOC
 #warning DEBUG_MALLOC ENABLED
 # define INLINE
+# define ALWAYSINLINE
 # define CHECK_LOCKED(szone, fun)						\
 do {										\
     if (__is_threaded && TRY_LOCK(szone->lock)) {				\
@@ -51,6 +50,7 @@ do {										\
 } while (0)
 #else
 # define INLINE	__inline__
+# define ALWAYSINLINE __attribute__((always_inline))
 # define CHECK_LOCKED(szone, fun)	{}
 #endif
 
@@ -417,46 +417,46 @@ static void		*allocate_pages(szone_t *szone, size_t size, unsigned char align, u
 static void		deallocate_pages(szone_t *szone, void *addr, size_t size, unsigned debug_flags);
 static kern_return_t	_szone_default_reader(task_t task, vm_address_t address, vm_size_t size, void **ptr);
 
-static INLINE void	free_list_checksum(szone_t *szone, free_list_t *ptr, const char *msg);
-static INLINE void	free_list_set_checksum(szone_t *szone, free_list_t *ptr);
+static INLINE void	free_list_checksum(szone_t *szone, free_list_t *ptr, const char *msg) ALWAYSINLINE;
+static INLINE void	free_list_set_checksum(szone_t *szone, free_list_t *ptr) ALWAYSINLINE;
 static unsigned		free_list_count(const free_list_t *ptr);
 
-static INLINE msize_t	get_tiny_meta_header(const void *ptr, boolean_t *is_free);
-static INLINE void	set_tiny_meta_header_in_use(const void *ptr, msize_t msize);
-static INLINE void	set_tiny_meta_header_middle(const void *ptr);
-static INLINE void	set_tiny_meta_header_free(const void *ptr, msize_t msize);
-static INLINE boolean_t	tiny_meta_header_is_free(const void *ptr);
-static INLINE void	*tiny_previous_preceding_free(void *ptr, msize_t *prev_msize);
-static INLINE void	tiny_free_list_add_ptr(szone_t *szone, void *ptr, msize_t msize);
-static INLINE void	tiny_free_list_remove_ptr(szone_t *szone, void *ptr, msize_t msize);
-static INLINE tiny_region_t *tiny_region_for_ptr_no_lock(szone_t *szone, const void *ptr);
-static INLINE void	tiny_free_no_lock(szone_t *szone, tiny_region_t *region, void *ptr, msize_t msize);
+static INLINE msize_t	get_tiny_meta_header(const void *ptr, boolean_t *is_free) ALWAYSINLINE;
+static INLINE void	set_tiny_meta_header_in_use(const void *ptr, msize_t msize) ALWAYSINLINE;
+static INLINE void	set_tiny_meta_header_middle(const void *ptr) ALWAYSINLINE;
+static INLINE void	set_tiny_meta_header_free(const void *ptr, msize_t msize) ALWAYSINLINE;
+static INLINE boolean_t	tiny_meta_header_is_free(const void *ptr) ALWAYSINLINE;
+static INLINE void	*tiny_previous_preceding_free(void *ptr, msize_t *prev_msize) ALWAYSINLINE;
+static INLINE void	tiny_free_list_add_ptr(szone_t *szone, void *ptr, msize_t msize) ALWAYSINLINE;
+static INLINE void	tiny_free_list_remove_ptr(szone_t *szone, void *ptr, msize_t msize) ALWAYSINLINE;
+static INLINE tiny_region_t *tiny_region_for_ptr_no_lock(szone_t *szone, const void *ptr) ALWAYSINLINE;
+static INLINE void	tiny_free_no_lock(szone_t *szone, tiny_region_t *region, void *ptr, msize_t msize) ALWAYSINLINE;
 static void		*tiny_malloc_from_region_no_lock(szone_t *szone, msize_t msize);
-static INLINE boolean_t	try_realloc_tiny_in_place(szone_t *szone, void *ptr, size_t old_size, size_t new_size);
+static INLINE boolean_t	try_realloc_tiny_in_place(szone_t *szone, void *ptr, size_t old_size, size_t new_size) ALWAYSINLINE;
 static boolean_t	tiny_check_region(szone_t *szone, tiny_region_t *region);
 static kern_return_t	tiny_in_use_enumerator(task_t task, void *context, unsigned type_mask, vm_address_t region_address, unsigned short num_regions, size_t tiny_bytes_free_at_end, memory_reader_t reader, vm_range_recorder_t recorder);
-static INLINE void	*tiny_malloc_from_free_list(szone_t *szone, msize_t msize);
-static INLINE void	*tiny_malloc_should_clear(szone_t *szone, msize_t msize, boolean_t cleared_requested);
-static INLINE void	free_tiny(szone_t *szone, void *ptr, tiny_region_t *tiny_region);
+static INLINE void	*tiny_malloc_from_free_list(szone_t *szone, msize_t msize) ALWAYSINLINE;
+static INLINE void	*tiny_malloc_should_clear(szone_t *szone, msize_t msize, boolean_t cleared_requested) ALWAYSINLINE;
+static INLINE void	free_tiny(szone_t *szone, void *ptr, tiny_region_t *tiny_region) ALWAYSINLINE;
 static void		print_tiny_free_list(szone_t *szone);
 static void		print_tiny_region(boolean_t verbose, tiny_region_t region, size_t bytes_at_end);
 static boolean_t	tiny_free_list_check(szone_t *szone, grain_t slot);
 
-static INLINE void	small_meta_header_set_is_free(msize_t *meta_headers, unsigned index, msize_t msize);
-static INLINE void	small_meta_header_set_in_use(msize_t *meta_headers, msize_t index, msize_t msize);
-static INLINE void	small_meta_header_set_middle(msize_t *meta_headers, msize_t index);
+static INLINE void	small_meta_header_set_is_free(msize_t *meta_headers, unsigned index, msize_t msize) ALWAYSINLINE;
+static INLINE void	small_meta_header_set_in_use(msize_t *meta_headers, msize_t index, msize_t msize) ALWAYSINLINE;
+static INLINE void	small_meta_header_set_middle(msize_t *meta_headers, msize_t index) ALWAYSINLINE;
 static void		small_free_list_add_ptr(szone_t *szone, void *ptr, msize_t msize);
 static void		small_free_list_remove_ptr(szone_t *szone, void *ptr, msize_t msize);
-static INLINE small_region_t *small_region_for_ptr_no_lock(szone_t *szone, const void *ptr);
-static INLINE void	small_free_no_lock(szone_t *szone, small_region_t *region, void *ptr, msize_t msize);
+static INLINE small_region_t *small_region_for_ptr_no_lock(szone_t *szone, const void *ptr) ALWAYSINLINE;
+static INLINE void	small_free_no_lock(szone_t *szone, small_region_t *region, void *ptr, msize_t msize) ALWAYSINLINE;
 static void		*small_malloc_from_region_no_lock(szone_t *szone, msize_t msize);
-static INLINE boolean_t	try_realloc_small_in_place(szone_t *szone, void *ptr, size_t old_size, size_t new_size);
+static INLINE boolean_t	try_realloc_small_in_place(szone_t *szone, void *ptr, size_t old_size, size_t new_size) ALWAYSINLINE;
 static boolean_t	szone_check_small_region(szone_t *szone, small_region_t *region);
 static kern_return_t	small_in_use_enumerator(task_t task, void *context, unsigned type_mask, vm_address_t region_address, unsigned short num_regions, size_t small_bytes_free_at_end, memory_reader_t reader, vm_range_recorder_t recorder);
-static INLINE void	*small_malloc_from_free_list(szone_t *szone, msize_t msize);
-static INLINE void	*small_malloc_should_clear(szone_t *szone, msize_t msize, boolean_t cleared_requested);
-static INLINE void	*small_malloc_cleared_no_lock(szone_t *szone, msize_t msize);
-static INLINE void	free_small(szone_t *szone, void *ptr, small_region_t *small_region);
+static INLINE void	*small_malloc_from_free_list(szone_t *szone, msize_t msize) ALWAYSINLINE;
+static INLINE void	*small_malloc_should_clear(szone_t *szone, msize_t msize, boolean_t cleared_requested) ALWAYSINLINE;
+static INLINE void	*small_malloc_cleared_no_lock(szone_t *szone, msize_t msize) ALWAYSINLINE;
+static INLINE void	free_small(szone_t *szone, void *ptr, small_region_t *small_region) ALWAYSINLINE;
 static void		print_small_free_list(szone_t *szone);
 static void		print_small_region(szone_t *szone, boolean_t verbose, small_region_t *region, size_t bytes_at_end);
 static boolean_t	small_free_list_check(szone_t *szone, grain_t grain);
@@ -466,8 +466,8 @@ static void		large_debug_print(szone_t *szone);
 #endif
 static large_entry_t	*large_entry_for_pointer_no_lock(szone_t *szone, const void *ptr);
 static void		large_entry_insert_no_lock(szone_t *szone, large_entry_t range);
-static INLINE void	large_entries_rehash_after_entry_no_lock(szone_t *szone, large_entry_t *entry);
-static INLINE large_entry_t *large_entries_alloc_no_lock(szone_t *szone, unsigned num);
+static INLINE void	large_entries_rehash_after_entry_no_lock(szone_t *szone, large_entry_t *entry) ALWAYSINLINE;
+static INLINE large_entry_t *large_entries_alloc_no_lock(szone_t *szone, unsigned num) ALWAYSINLINE;
 static void		large_entries_free_no_lock(szone_t *szone, large_entry_t *entries, unsigned num, vm_range_t *range_to_deallocate);
 static void		large_entries_grow_no_lock(szone_t *szone, vm_range_t *range_to_deallocate);
 static vm_range_t	large_free_no_lock(szone_t *szone, large_entry_t *entry);
@@ -476,11 +476,11 @@ static huge_entry_t	*huge_entry_for_pointer_no_lock(szone_t *szone, const void *
 static boolean_t	huge_entry_append(szone_t *szone, huge_entry_t huge);
 static kern_return_t	huge_in_use_enumerator(task_t task, void *context, unsigned type_mask, vm_address_t huge_entries_address, unsigned num_entries, memory_reader_t reader, vm_range_recorder_t recorder);
 static void		*large_and_huge_malloc(szone_t *szone, unsigned num_pages);
-static INLINE void	free_large_or_huge(szone_t *szone, void *ptr);
-static INLINE int	try_realloc_large_or_huge_in_place(szone_t *szone, void *ptr, size_t old_size, size_t new_size);
+static INLINE void	free_large_or_huge(szone_t *szone, void *ptr) ALWAYSINLINE;
+static INLINE int	try_realloc_large_or_huge_in_place(szone_t *szone, void *ptr, size_t old_size, size_t new_size) ALWAYSINLINE;
 
 static void		szone_free(szone_t *szone, void *ptr);
-static INLINE void	*szone_malloc_should_clear(szone_t *szone, size_t size, boolean_t cleared_requested);
+static INLINE void	*szone_malloc_should_clear(szone_t *szone, size_t size, boolean_t cleared_requested) ALWAYSINLINE;
 static void		*szone_malloc(szone_t *szone, size_t size);
 static void		*szone_calloc(szone_t *szone, size_t num_items, size_t size);
 static void		*szone_valloc(szone_t *szone, size_t size);
@@ -562,6 +562,7 @@ szone_error(szone_t *szone, const char *msg, const void *ptr)
     } else {
 	malloc_printf("*** error: %s\n", msg);
     }
+    malloc_printf("*** set a breakpoint in szone_error to debug\n");
 #if DEBUG_MALLOC
     szone_print(szone, 1);
     szone_sleep();
@@ -3403,7 +3404,7 @@ szone_good_size(szone_t *szone, size_t size)
 	// think tiny
 	msize = TINY_MSIZE_FOR_BYTES(size + TINY_QUANTUM - 1);
 	if (! msize) msize = 1;
-	return TINY_BYTES_FOR_MSIZE(msize << SHIFT_TINY_QUANTUM);
+	return TINY_BYTES_FOR_MSIZE(msize);
     }
     if (!((szone->debug_flags & SCALABLE_MALLOC_ADD_GUARD_PAGES) && PROTECT_SMALL) && (size < LARGE_THRESHOLD)) {
 	// think small

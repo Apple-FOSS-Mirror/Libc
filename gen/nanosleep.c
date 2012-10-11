@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -28,6 +26,63 @@
 #include <mach/mach_error.h>
 #include <mach/mach_time.h>
 #include <stdio.h>
+
+
+#ifdef BUILDING_VARIANT
+#include "pthread_internals.h"
+
+extern int __unix_conforming;
+extern mach_port_t clock_port;
+extern semaphore_t clock_sem;
+
+int
+nanosleep(const struct timespec *requested_time, struct timespec *remaining_time) {
+    kern_return_t kret;
+    int ret;
+    mach_timespec_t remain;
+    mach_timespec_t current;
+   
+	if (__unix_conforming == 0)
+		__unix_conforming = 1;
+	 
+    if ((requested_time == NULL) || (requested_time->tv_sec < 0) || (requested_time->tv_nsec >= NSEC_PER_SEC)) {
+        errno = EINVAL;
+        return -1;
+    }
+
+    if (remaining_time != NULL) {
+        kret = clock_get_time(clock_port, &current);
+        if (kret != KERN_SUCCESS) {
+            fprintf(stderr, "clock_get_time() failed: %s\n", mach_error_string(ret));
+            return -1;
+        }
+    }
+    ret = __semwait_signal(clock_sem, MACH_PORT_NULL, 1, 1, requested_time->tv_sec, requested_time->tv_nsec);
+    if (ret < 0) {
+        if (errno == ETIMEDOUT) {
+		return 0;
+        } else if (errno == EINTR) {
+            if (remaining_time != NULL) {
+                ret = clock_get_time(clock_port, &remain);
+                if (ret != KERN_SUCCESS) {
+                    fprintf(stderr, "clock_get_time() failed: %s\n", mach_error_string(ret));
+                    return -1;
+                }
+                /* This depends on the layout of a mach_timespec_t and timespec_t being equivalent */
+                ADD_MACH_TIMESPEC(&current, requested_time);
+                SUB_MACH_TIMESPEC(&current, &remain);
+                remaining_time->tv_sec = current.tv_sec;
+                remaining_time->tv_nsec = current.tv_nsec;
+            }
+        } else {
+            errno = EINVAL;
+	}
+    }
+    return -1;
+}
+
+
+#else /* BUILDING_VARIANT */
 
 int
 nanosleep(const struct timespec *requested_time, struct timespec *remaining_time) {
@@ -76,3 +131,6 @@ nanosleep(const struct timespec *requested_time, struct timespec *remaining_time
     }
     return 0;
 }
+
+
+#endif /* BUILDING_VARIANT */

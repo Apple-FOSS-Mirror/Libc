@@ -5,13 +5,16 @@
 
 CFLAGS-localtime-fbsd.c += -DNOTIFY_TZ
 
-MISRCS += getdate.c
+UNIX03SRCS += strftime.c
+
+MISRCS += getdate.c timezone_unix03.c
 
 .include "Makefile.fbsd_begin"
 FBSDMISRCS= asctime.c difftime.c ftime.c localtime.c \
 	strftime.c strptime.c timelocal.c time32.c
 FBSDHDRS= private.h timelocal.h tzfile.h
 .include "Makefile.fbsd_end"
+INSTHDRS_AUTOPATCH += tzfile.h
 
 .if ${LIB} == "c"
 .include "Makefile.fbsd_begin"
@@ -27,4 +30,6 @@ MLINKS+=ctime.3 asctime.3 ctime.3 difftime.3 ctime.3 gmtime.3 \
 	ctime.3 ctime_r.3 ctime.3 localtime_r.3 ctime.3 gmtime_r.3 \
 	ctime.3 asctime_r.3
 MLINKS+=time2posix.3 posix2time.3
+MLINKS+=strftime.3 strftime_l.3
+MLINKS+=strptime.3 strptime_l.3
 .endif

@@ -20,13 +20,21 @@
 # Sources common to both syscall interfaces:
 
 # 3375657: patches for sem_open() sem_unlink() shm_open() shm_unlink()
-MISRCS+= errno.c gettimeofday.c sigcatch.c sigsuspend.c getdtablesize.c  \
+MISRCS+= errno.c gettimeofday.c sigcatch.c sigsuspend.c \
 	sigaction.c sigtramp.c crt_externs.c \
-	sem_open.c sem_unlink.c shm_open.c shm_unlink.c fix-3375657.c
+	sem_open.c sem_unlink.c shm_open.c shm_unlink.c fix-3375657.c \
+	accessx_np.c chmodx_np.c getsgroups_np.c \
+	getwgroups_np.c openx_np.c mmap.c \
+	pthread_getuid_np.c pthread_setuid_np.c setsgroups_np.c \
+	setwgroups_np.c statx_np.c umaskx_np.c \
+	semctl.c shmctl.c msgctl.c \
+	mprotect.c msync.c munmap.c other_libc_init.c
 
 .for _src in sem_open.c sem_unlink.c shm_open.c shm_unlink.c fix-3375657.c
 CFLAGS-${_src} += -D__APPLE_PR3375657_HACK__
 .endfor
+
+UNIX03SRCS += mmap.c mprotect.c msgctl.c msync.c munmap.c semctl.c shmctl.c
 
 # Add machine dependent asm sources:
 SRCS+=${MDASM}
@@ -67,7 +75,7 @@ MAN2+= pthread_kill.2 pthread_sigmask.2 \
 	sem_unlink.2 sem_wait.2 shm_open.2 shm_unlink.2 \
 	sigwait.2 getdtablesize.2 setreuid.2 setregid.2 \
 	nanosleep.2
-MAN3+= atomic.3 atomicqueue.3 barrier.3 spinlock.3
+MAN3+= atomic.3 barrier.3 spinlock.3
 MLINKS+= atomic.3 OSAtomicAdd32.3
 MLINKS+= atomic.3 OSAtomicIncrement32.3
 MLINKS+= atomic.3 OSAtomicDecrement32.3
@@ -81,8 +89,6 @@ MLINKS+= atomic.3 OSAtomicCompareAndSwap32.3
 MLINKS+= atomic.3 OSAtomicCompareAndSwap64.3
 MLINKS+= atomic.3 OSAtomicTestAndSet.3
 MLINKS+= atomic.3 OSAtomicTestAndClear.3
-MLINKS+= atomicqueue.3 OSAtomicDequeue.3
-MLINKS+= atomicqueue.3 OSAtomicEnqueue.3
 MLINKS+= barrier.3 OSMemoryBarrier.3
 MLINKS+= spinlock.3 OSSpinLockTry.3
 MLINKS+= spinlock.3 OSSpinLockLock.3

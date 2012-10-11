@@ -23,7 +23,6 @@
 #ifndef	_FTW_H
 #define	_FTW_H
 
-#include <sys/types.h>
 #include <sys/stat.h>
 
 /*
@@ -52,9 +51,10 @@ struct FTW {
 };
 
 __BEGIN_DECLS
-int	ftw(const char *, int (*)(const char *, const struct stat *, int), int);
+int	ftw(const char *, int (*)(const char *, const struct stat *, int), int) 
+	__DARWIN_ALIAS(ftw);
 int	nftw(const char *, int (*)(const char *, const struct stat *, int,
-	    struct FTW *), int, int);
+	    struct FTW *), int, int) __DARWIN_ALIAS(nftw);
 __END_DECLS
 
 #endif	/* !_FTW_H */

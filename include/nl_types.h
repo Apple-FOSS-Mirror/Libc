@@ -40,9 +40,9 @@ up-to-date.  Many thanks.
 #define	NL_SETD		0
 #define	NL_CAT_LOCALE	1
 
-#ifndef _NL_ITEM_DECLARED
-typedef	__osx_nl_item	nl_item;
-#define _NL_ITEM_DECLARED
+#ifndef _NL_ITEM
+typedef	__darwin_nl_item	nl_item;
+#define _NL_ITEM
 #endif
 
 typedef	void	*nl_catd;

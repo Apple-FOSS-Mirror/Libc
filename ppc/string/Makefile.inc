@@ -7,6 +7,7 @@
 MDSRCS +=	\
      bcopy.s	\
      bzero.s	\
+     memset.s   \
      memcmp.s	\
      strcat.s	\
      strcmp.s	\

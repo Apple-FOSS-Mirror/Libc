@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -64,12 +62,12 @@
 #include <sys/cdefs.h>
 #include <sys/signal.h>
 
-#ifndef _PTHREAD_T_DECLARED
-typedef __osx_pthread_t		pthread_t;
-#define _PTHREAD_T_DECLARED
+#ifndef _PTHREAD_T
+typedef __darwin_pthread_t	pthread_t;
+#define _PTHREAD_T
 #endif
 
-#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_C_SOURCE)
 extern __const char *__const sys_signame[NSIG];
 extern __const char *__const sys_siglist[NSIG];
 #endif
@@ -100,15 +98,16 @@ int	sigpause(int);
 int	sigpending(sigset_t *);
 int	sigprocmask(int, const sigset_t * __restrict, sigset_t * __restrict);
 int	sigrelse(int);
+void    (*sigset(int, void (*)(int)))(int); 
 int	sigsuspend(const sigset_t *);
 int	sigwait(const sigset_t * __restrict, int * __restrict);
-#ifndef _POSIX_SOURCE
+#ifndef _POSIX_C_SOURCE
 void	psignal(unsigned int, const char *);
 int	sigblock(int);
 int	sigreturn(struct sigcontext *);
 int	sigsetmask(int);
 int	sigvec(int, struct sigvec *, struct sigvec *);
-#endif	/* !_POSIX_SOURCE */
+#endif	/* !_POSIX_C_SOURCE */
 __END_DECLS
 
 /* List definitions after function declarations, or Reiser cpp gets upset. */

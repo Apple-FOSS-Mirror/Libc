@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -75,9 +73,11 @@ void (*_atfork_child_routine)(void);
 static void mach_atfork_child_routine(void);
 static boolean_t first = TRUE;
 static void (*previous_atfork_child_routine)(void);
+static boolean_t mach_init_inited = FALSE;
 extern int mach_init(void);
 extern void _pthread_set_self(void *);
 extern void cthread_set_self(void *);
+extern void other_libc_init(void);
 
 
 static void mach_atfork_child_routine(void)
@@ -94,6 +94,7 @@ static void mach_atfork_child_routine(void)
 	if (previous_atfork_child_routine) {
 		(*previous_atfork_child_routine)();
 	}
+	mach_init_inited = FALSE;
 	mach_init();
 }
 
@@ -211,12 +212,35 @@ int mach_init_doit(int forkchild)
 			     VM_PROT_NONE, VM_PROT_NONE, VM_INHERIT_COPY);
 		/* ignore result, we don't care if it failed */
 	}
+
 	return(0);
 }
 
+#ifdef __DYNAMIC__
+/* libc_initializer is the dyld initializer for libc (3760827) */
+static void libc_initializer() __attribute__((constructor));
+static void
+libc_initializer()
+{
+	mach_init();
+}
+#endif /* __DYNAMIC__ */
+
+/* mach_init may get called from the initializer and from crt.c, but only
+ * call mach_init_doit() once */
 int mach_init(void)
 {
-        return(mach_init_doit(0));
+	int ret;
+
+	if (mach_init_inited)
+		return(0);
+	mach_init_inited = TRUE;
+	ret = mach_init_doit(0);
+
+	/* Do other Libc initialization */
+	other_libc_init();
+
+	return ret;
 }
 
 int	(*mach_init_routine)(void) = mach_init;

@@ -69,62 +69,50 @@
 
 #include <sys/cdefs.h>
 #include <_types.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <time.h>
 
 #ifndef NULL
-#define	NULL	__OSX_NULL
+#define	NULL	__DARWIN_NULL
 #endif /* ! NULL */
 
-#ifndef	_BSD_SIZE_T_DEFINED_
-#define	_BSD_SIZE_T_DEFINED_
-typedef	__osx_size_t	size_t;
+#ifndef	_SIZE_T
+#define	_SIZE_T
+typedef	__darwin_size_t		size_t;
 #endif
 
-#ifndef	_BSD_MBSTATE_T_DEFINED_
-#define	_BSD_MBSTATE_T_DEFINED_
-typedef	__osx_mbstate_t	mbstate_t;
+#ifndef	_MBSTATE_T
+#define	_MBSTATE_T
+typedef	__darwin_mbstate_t	mbstate_t;
 #endif
 
-#ifndef	_BSD_CT_RUNE_T_DEFINED_
-#define _BSD_CT_RUNE_T_DEFINED_
-typedef	__osx_ct_rune_t	ct_rune_t;
+#ifndef	_CT_RUNE_T
+#define _CT_RUNE_T
+typedef	__darwin_ct_rune_t	ct_rune_t;
 #endif
 
-#ifndef	_BSD_RUNE_T_DEFINED_
-#define _BSD_RUNE_T_DEFINED_
-typedef	__osx_rune_t	rune_t;
+#ifndef	_RUNE_T
+#define _RUNE_T
+typedef	__darwin_rune_t		rune_t;
 #endif
 
 #ifndef	__cplusplus
-#ifndef	_BSD_WCHAR_T_DEFINED_
-#define	_BSD_WCHAR_T_DEFINED_
-typedef	__osx_wchar_t	wchar_t;
-#endif	/* _BSD_WCHAR_T_DEFINED_ */
+#ifndef	_WCHAR_T
+#define	_WCHAR_T
+typedef	__darwin_wchar_t	wchar_t;
+#endif	/* _WCHAR_T */
 #endif	/* __cplusplus */
 
-#ifndef _WCTYPE_T_DEFINED_
-#define _WCTYPE_T_DEFINED_
-typedef	__osx_wctype_t	wctype_t;
-#endif
-
-#ifndef	_BSD_WINT_T_DEFINED_
-#define _BSD_WINT_T_DEFINED_
-typedef	__osx_wint_t	wint_t;
-#endif
-
-#ifndef WEOF
-#define	WEOF 		__OSX_WEOF
-#endif
-
 #ifndef WCHAR_MIN
-#define WCHAR_MIN	__OSX_WCHAR_MIN
+#define WCHAR_MIN	__DARWIN_WCHAR_MIN
 #endif
 
 #ifndef WCHAR_MAX
-#define WCHAR_MAX	__OSX_WCHAR_MAX
+#define WCHAR_MAX	__DARWIN_WCHAR_MAX
 #endif
+
+#include <stdarg.h>
+#include <stdio.h>
+#include <time.h>
+#include <_wctype.h>
 
 __BEGIN_DECLS
 wint_t	btowc(int);
@@ -133,22 +121,10 @@ wchar_t	*fgetws(wchar_t * __restrict, int, FILE * __restrict);
 wint_t	fputwc(wchar_t, FILE *);
 int	fputws(const wchar_t * __restrict, FILE * __restrict);
 int	fwide(FILE *, int);
-int	fwprintf(FILE * __restrict, const wchar_t * __restrict, ...);
-int	fwscanf(FILE * __restrict, const wchar_t * __restrict, ...);
+int	fwprintf(FILE * __restrict, const wchar_t * __restrict, ...) __DARWIN_LDBL_COMPAT(fwprintf);
+int	fwscanf(FILE * __restrict, const wchar_t * __restrict, ...) __DARWIN_LDBL_COMPAT(fwscanf);
 wint_t	getwc(FILE *);
 wint_t	getwchar(void);
-int	iswalnum(wint_t);
-int	iswalpha(wint_t);
-int	iswcntrl(wint_t);
-int	iswctype(wint_t, wctype_t);
-int	iswdigit(wint_t);
-int	iswgraph(wint_t);
-int	iswlower(wint_t);
-int	iswprint(wint_t);
-int	iswpunct(wint_t);
-int	iswspace(wint_t);
-int	iswupper(wint_t);
-int	iswxdigit(wint_t);
 size_t	mbrlen(const char * __restrict, size_t, mbstate_t * __restrict);
 size_t	mbrtowc(wchar_t * __restrict, const char * __restrict, size_t,
 	    mbstate_t * __restrict);
@@ -158,16 +134,14 @@ size_t	mbsrtowcs(wchar_t * __restrict, const char ** __restrict, size_t,
 wint_t	putwc(wchar_t, FILE *);
 wint_t	putwchar(wchar_t);
 int	swprintf(wchar_t * __restrict, size_t n, const wchar_t * __restrict,
-	    ...);
-int	swscanf(const wchar_t * __restrict, const wchar_t * __restrict, ...);
-wint_t	towlower(wint_t);
-wint_t	towupper(wint_t);
+	    ...) __DARWIN_LDBL_COMPAT(swprintf);
+int	swscanf(const wchar_t * __restrict, const wchar_t * __restrict, ...) __DARWIN_LDBL_COMPAT(swscanf);
 wint_t	ungetwc(wint_t, FILE *);
 int	vfwprintf(FILE * __restrict, const wchar_t * __restrict,
-	    _BSD_VA_LIST_);
+	    __darwin_va_list) __DARWIN_LDBL_COMPAT(vfwprintf);
 int	vswprintf(wchar_t * __restrict, size_t n, const wchar_t * __restrict,
-	    _BSD_VA_LIST_);
-int	vwprintf(const wchar_t * __restrict, _BSD_VA_LIST_);
+	    __darwin_va_list) __DARWIN_LDBL_COMPAT(vswprintf);
+int	vwprintf(const wchar_t * __restrict, __darwin_va_list) __DARWIN_LDBL_COMPAT(vwprintf);
 size_t	wcrtomb(char * __restrict, wchar_t, mbstate_t * __restrict);
 wchar_t	*wcscat(wchar_t * __restrict, const wchar_t * __restrict);
 wchar_t	*wcschr(const wchar_t *, wchar_t);
@@ -195,34 +169,45 @@ wchar_t	*wcstok(wchar_t * __restrict, const wchar_t * __restrict,
 long	 wcstol(const wchar_t * __restrict, wchar_t ** __restrict, int);
 unsigned long
 	 wcstoul(const wchar_t * __restrict, wchar_t ** __restrict, int);
-wctype_t
-	wctype(const char *);
 wchar_t	*wmemchr(const wchar_t *, wchar_t, size_t);
 int	wmemcmp(const wchar_t *, const wchar_t *, size_t);
 wchar_t	*wmemcpy(wchar_t * __restrict, const wchar_t * __restrict, size_t);
 wchar_t	*wmemmove(wchar_t *, const wchar_t *, size_t);
 wchar_t	*wmemset(wchar_t *, wchar_t, size_t);
-int	wprintf(const wchar_t * __restrict, ...);
-int	wscanf(const wchar_t * __restrict, ...);
+int	wprintf(const wchar_t * __restrict, ...) __DARWIN_LDBL_COMPAT(wprintf);
+int	wscanf(const wchar_t * __restrict, ...) __DARWIN_LDBL_COMPAT(wscanf);
 
 #if !defined(_ANSI_SOURCE)
 int	vfwscanf(FILE * __restrict, const wchar_t * __restrict,
-	    _BSD_VA_LIST_);
+	    __darwin_va_list) __DARWIN_LDBL_COMPAT(vfwscanf);
 int	vswscanf(const wchar_t * __restrict, const wchar_t * __restrict,
-	    _BSD_VA_LIST_);
-int	vwscanf(const wchar_t * __restrict, _BSD_VA_LIST_);
+	    __darwin_va_list) __DARWIN_LDBL_COMPAT(vswscanf);
+int	vwscanf(const wchar_t * __restrict, __darwin_va_list) __DARWIN_LDBL_COMPAT(vwscanf);
 float	wcstof(const wchar_t * __restrict, wchar_t ** __restrict);
 long double
-	wcstold(const wchar_t * __restrict, wchar_t ** __restrict);
+	wcstold(const wchar_t * __restrict, wchar_t ** __restrict) __DARWIN_LDBL_COMPAT(wcstold);
+#if !__DARWIN_NO_LONG_LONG
 long long
 	wcstoll(const wchar_t * __restrict, wchar_t ** __restrict, int);
 unsigned long long
 	wcstoull(const wchar_t * __restrict, wchar_t ** __restrict, int);
+#endif /* !__DARWIN_NO_LONG_LONG */
 int	wcswidth(const wchar_t *, size_t);
 int	wcwidth(wchar_t);
+#endif /* !defined(_ANSI_SOURCE) */
+
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_C_SOURCE)
+size_t	mbsnrtowcs(wchar_t * __restrict, const char ** __restrict, size_t,
+	    size_t, mbstate_t * __restrict);
 size_t	wcslcat(wchar_t *, const wchar_t *, size_t);
 size_t	wcslcpy(wchar_t *, const wchar_t *, size_t);
-#endif /* !defined(_ANSI_SOURCE) */
+size_t	wcsnrtombs(char * __restrict, const wchar_t ** __restrict, size_t,
+	    size_t, mbstate_t * __restrict);
+#endif /* !defined(_ANSI_SOURCE) && !defined(_POSIX_C_SOURCE) */
 __END_DECLS
+
+#ifdef _USE_EXTENDED_LOCALES_
+#include <xlocale/_wchar.h>
+#endif /* _USE_EXTENDED_LOCALES_ */
 
 #endif /* !_WCHAR_H_ */

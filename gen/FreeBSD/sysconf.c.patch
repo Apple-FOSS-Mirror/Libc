@@ -1,5 +1,5 @@
---- sysconf.c.orig	Sun Nov 17 00:54:29 2002
-+++ sysconf.c	Wed Apr 14 17:09:36 2004
+--- sysconf.c	2004-04-15 16:50:28.000000000 -0700
++++ /Volumes/dee/Len/Build/Libc-3845788.roots/Libc-3845788.sym/sysconf-fbsd.c	2004-11-30 18:08:26.000000000 -0800
 @@ -45,6 +45,8 @@
  #include <sys/sysctl.h>
  #include <sys/resource.h>
@@ -20,16 +20,18 @@
  
  #define	_PATH_ZONEINFO	TZDIR	/* from tzfile.h */
  
-@@ -76,7 +78,7 @@
+@@ -75,8 +77,9 @@
+ 	int name;
  {
  	struct rlimit rl;
++	quad_t qdvalue;	/* for kern.sysv.shmmin */
  	size_t len;
 -	int mib[2], sverrno, value;
 +	int mib[3], sverrno, value;
  	long defaultresult;
  	const char *path;
  
-@@ -254,76 +256,94 @@
+@@ -254,76 +257,94 @@
  		return (_POSIX_TIMERS);
  #endif
  	case _SC_AIO_LISTIO_MAX:
@@ -147,7 +149,7 @@
  	case _SC_ADVISORY_INFO:
  #if _POSIX_ADVISORY_INFO == 0
  #error "_POSIX_ADVISORY_INFO"
-@@ -348,18 +368,10 @@
+@@ -348,18 +369,10 @@
  #else
  		return (_POSIX_CPUTIME);
  #endif
@@ -167,7 +169,7 @@
  	case _SC_HOST_NAME_MAX:
  		return (MAXHOSTNAMELEN - 1); /* does not include \0 */
  	case _SC_LOGIN_NAME_MAX:
-@@ -370,10 +382,8 @@
+@@ -370,10 +383,8 @@
  #else
  		return (_POSIX_MONOTONIC_CLOCK);
  #endif
@@ -179,7 +181,12 @@
  	case _SC_READER_WRITER_LOCKS:
  		return (_POSIX_READER_WRITER_LOCKS);
  	case _SC_REGEXP:
-@@ -413,7 +423,11 @@
+@@ -410,10 +421,16 @@
+ 		return (_POSIX_THREAD_PROCESS_SHARED);
+ 	case _SC_THREAD_SAFE_FUNCTIONS:
+ 		return (_POSIX_THREAD_SAFE_FUNCTIONS);
++	case _SC_THREAD_SPORADIC_SERVER:
++		return (_POSIX_THREAD_SPORADIC_SERVER);
  	case _SC_THREAD_STACK_MIN:
  		return (PTHREAD_STACK_MIN);
  	case _SC_THREAD_THREADS_MAX:
@@ -191,7 +198,25 @@
  	case _SC_TIMEOUTS:
  		return (_POSIX_TIMEOUTS);
  	case _SC_THREADS:
-@@ -493,9 +507,13 @@
+@@ -425,16 +442,14 @@
+ #else
+ 		return (_POSIX_TRACE);
+ #endif
+-#if _POSIX_TRACE > -1
+ 	case _SC_TRACE_EVENT_FILTER:
+ 		return (_POSIX_TRACE_EVENT_FILTER);
+ 	case _SC_TRACE_INHERIT:
+ 		return (_POSIX_TRACE_INHERIT);
+ 	case _SC_TRACE_LOG:
+ 		return (_POSIX_TRACE_LOG);
+-#endif
+ 	case _SC_TTY_NAME_MAX:
+-		path = _PATH_DEV;
++		path = "/"; // should be _PATH_DEV (PR-3624562)
+ 		goto do_NAME_MAX;
+ 	case _SC_TYPED_MEMORY_OBJECTS:
+ #if _POSIX_TYPED_MEMORY_OBJECTS == 0
+@@ -493,9 +508,13 @@
  	case _SC_ATEXIT_MAX:
  		return (ATEXIT_SIZE);
  	case _SC_IOV_MAX:
@@ -200,12 +225,22 @@
  		mib[1] = KERN_IOV_MAX;
  		break;
 +#else
-+		return (-1);
++		return (IOV_MAX);
 +#endif
  	case _SC_XOPEN_CRYPT:
  		return (_XOPEN_CRYPT);
  	case _SC_XOPEN_ENH_I18N:
-@@ -568,11 +586,25 @@
+@@ -531,7 +550,8 @@
+ #endif
+ 	case _SC_XOPEN_SHM:
+ 		sverrno = errno;
+-		if (sysctlbyname("kern.ipc.shmmin", &value, &len, NULL, 
++		len = sizeof(qdvalue);
++		if (sysctlbyname("kern.sysv.shmmin", &qdvalue, &len, NULL, 
+ 		    0) == -1) {
+ 			errno = sverrno;
+ 			return (-1);
+@@ -568,11 +588,25 @@
  		return (_POSIX_IPV6);
  #endif
  

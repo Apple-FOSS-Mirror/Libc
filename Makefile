@@ -9,24 +9,27 @@
 #
 # Yes, we build everything with -g, and strip it out later...
 #
+# -faltivec now disables inlining, so we can't use it globally.  Fortunately,
+# only two files need altivec support, so we use file-specific CFLAGS to add
+# the option when needed.
+#
 LIB=c
 SHLIB_MAJOR= 1
 SHLIB_MINOR= 0
-CC_3_3_OR_GREATER != ${.CURDIR}/cc-3.3-or-greater
-.if (${CC_3_3_OR_GREATER} != YES)
-CC = gcc-3.3
-.endif
 .if (${MACHINE_ARCH} == unknown)
 MACHINE_ARCH != /usr/bin/arch
 .endif 
-.if (${MACHINE_ARCH} == ppc) || (${MACHINE_ARCH} == ppc64)
-CFLAGS += -faltivec -DALTIVEC
-.endif
-CFLAGS += -DNOID
-.ifdef ALTLIBCHEADERS
-CFLAGS += -I${ALTLIBCHEADERS}
+CC = gcc-3.5
+# always set __DARWIN_UNIX03 to zero (variant will set to one) except for ppc64
+.if (${MACHINE_ARCH} == ppc64)
+CFLAGS += -D__DARWIN_UNIX03=1
 .else
-CFLAGS += -I${.CURDIR}/include
+CFLAGS += -D__DARWIN_UNIX03=0
+.endif
+CFLAGS += -D__LIBC__ -DNOID -I${.CURDIR}/include
+.ifdef ALTLIBCHEADERS
+INCLUDEDIR = ${ALTLIBCHEADERS}
+CFLAGS += -I${INCLUDEDIR}
 .endif
 .ifdef ALTFRAMEWORKSPATH
 PRIVINC = -F${ALTFRAMEWORKSPATH} -I${ALTFRAMEWORKSPATH}/System.framework/PrivateHeaders
@@ -35,13 +38,24 @@ PRIVINC = -I${NEXT_ROOT}/System/Library/Frameworks/System.framework/PrivateHeade
 .endif
 CFLAGS += ${PRIVINC}
 CFLAGS += -DLIBC_MAJOR=${SHLIB_MAJOR} -no-cpp-precomp -force_cpusubtype_ALL
-CFLAGS += -arch ${MACHINE_ARCH} -fno-common -pipe -Wmost -g
-CFLAGS += -finline-limit=5000 -D__FBSDID=__RCSID -Wno-long-double
+CFLAGS += -fno-common -pipe -Wmost -g -D__FBSDID=__RCSID
+CFLAGS += -finline-limit=1500 --param inline-unit-growth=200 -Winline
 AINC=	-I${.CURDIR}/${MACHINE_ARCH} -no-cpp-precomp -force_cpusubtype_ALL
 AINC+=-arch ${MACHINE_ARCH} -g
 CLEANFILES+=tags
 INSTALL_PIC_ARCHIVE=	yes
 PRECIOUSLIB=	yes
+
+# workaround for 3649783
+AINC += -fdollars-in-identifiers
+
+# ppc64 optimizer still blows up on some files, so we use -O0 to turn it
+# off on a per file basis
+.if (${MACHINE_ARCH} == ppc64)
+OPTIMIZE-acl_entry.c = -O0
+# glob-fbsd.c fails with -static -Os (3869444) so turn off optimization
+OPTIMIZE-glob-fbsd.c = -O0
+.endif
 
 # If these aren't set give it expected defaults
 DSTROOT ?= /
@@ -58,4 +72,7 @@ CFLAGS += -I${SYMROOT}
 .include "${.CURDIR}/Makefile.inc"
 .PATH: ${SYMROOT}
 .include "Makefile.xbs"
+.if exists(/usr/share/mk/bsd.init.mk)
+.include <bsd.init.mk>
+.endif
 .include <bsd.man.mk>

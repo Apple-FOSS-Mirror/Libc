@@ -47,6 +47,7 @@ _AUTOPATCHSYM: .USE
 .include "${.CURDIR}/${MACHINE_ARCH}/Makefile.inc"
 .endif
 
+.include "${.CURDIR}/darwin/Makefile.inc"
 .include "${.CURDIR}/db/Makefile.inc"
 .include "${.CURDIR}/compat-43/Makefile.inc"
 .include "${.CURDIR}/emulated/Makefile.inc"
@@ -59,7 +60,7 @@ _AUTOPATCHSYM: .USE
 .include "${.CURDIR}/mach/Makefile.inc"
 .include "${.CURDIR}/net/Makefile.inc"
 .include "${.CURDIR}/nls/Makefile.inc"
-#.include "${.CURDIR}/posix1e/Makefile.inc"
+.include "${.CURDIR}/posix1e/Makefile.inc"
 .include "${.CURDIR}/pthreads/Makefile.inc"
 .if !defined(NO_QUAD)
 #.include "${.CURDIR}/quad/Makefile.inc"

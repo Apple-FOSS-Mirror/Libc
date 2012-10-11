@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -133,7 +131,6 @@ extern void monreset(
     void);
 extern void monoutput(
     const char *filename);
-extern int add_profil(char *, int, int, int);
 
 static char profiling = -1;	/* tas (test and set) location for NeXT */
 static char init = 0;		/* set while moninit() is being serviced */

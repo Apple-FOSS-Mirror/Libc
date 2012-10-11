@@ -1,13 +1,16 @@
 # uuid sources
 .PATH: ${.CURDIR}/uuid
 
+# uuid/uuid.h is now installed by xnu
+
 UUIDSRCS = clear.c compare.c copy.c gen_uuid.c isnull.c pack.c parse.c \
 	unpack.c unparse.c
-UUIDHDRS = uuid.h uuidP.h
+UUIDHDRS = uuidP.h
 UUIDFROMMAN = libuuid.3.in
 UUIDTOMAN = uuid.3.in
 UUIDMAN3 = uuid_clear.3.in uuid_compare.3.in uuid_copy.3.in uuid_generate.3.in \
 	uuid_is_null.3.in uuid_parse.3.in uuid_unparse.3.in
+PRIVUUID_INSTHDRS += ${.CURDIR}/uuid/namespace.h
 
 .for _src in ${UUIDSRCS}
 ${SYMROOT}/${_src:R}-uuid.${_src:E}: uuidsrc/${_src} _AUTOPATCHSYM

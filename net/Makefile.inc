@@ -11,6 +11,8 @@ FBSDMISRCS= addr2ascii.c ascii2addr.c inet_addr.c inet_lnaof.c \
 	recv.c send.c
 .include "Makefile.fbsd_end"
 
+UNIX03SRCS+= recv.c send.c
+
 CFLAGS+= -I${.OBJDIR}
 
 # machine-dependent net sources

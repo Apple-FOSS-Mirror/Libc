@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -32,7 +30,8 @@
 #import <objc/zone.h>
 #import <malloc/malloc.h>
 #import <fcntl.h>
-#include <crt_externs.h>
+#import <crt_externs.h>
+#import <errno.h>
 #import <pthread_internals.h>
 
 #import "scalable_malloc.h"
@@ -63,7 +62,7 @@ static int malloc_check_abort = 0; // default is to sleep, not abort
 
 static int malloc_free_abort = 0; // default is not to abort
 
-static FILE *malloc_debug_file;
+static int malloc_debug_file;
 
 #define MALLOC_LOCK()		LOCK(_malloc_lock)
 #define MALLOC_UNLOCK()		UNLOCK(_malloc_lock)
@@ -75,6 +74,7 @@ static FILE *malloc_debug_file;
 
 /*********	Utilities	************/
 
+static inline malloc_zone_t * find_registered_zone(const void *, size_t *) __attribute__((always_inline));
 static inline malloc_zone_t *
 find_registered_zone(const void *ptr, size_t *returned_size) {
     // locates the proper zone
@@ -107,6 +107,7 @@ _malloc_initialize(void) {
     // malloc_printf("malloc_zones is at %p; malloc_num_zones is at %p\n", (unsigned)&malloc_zones, (unsigned)&malloc_num_zones);
 }
 
+static inline malloc_zone_t *inline_malloc_default_zone(void) __attribute__((always_inline));
 static inline malloc_zone_t *
 inline_malloc_default_zone(void) {
     if (!malloc_num_zones) _malloc_initialize();
@@ -128,7 +129,7 @@ set_flags_from_environment(void) {
     if (flag) {
 	fd = open(flag, O_WRONLY|O_APPEND|O_CREAT, 0644);
 	if (fd >= 0) {
-	    malloc_debug_file = fdopen(fd, "a+");
+	    malloc_debug_file = fd;
 	    fcntl(fd, F_SETFD, 0); // clear close-on-exec flag  XXX why?
 	} else {
 	    malloc_printf("Could not open %s, using stderr\n", flag);
@@ -228,7 +229,7 @@ malloc_create_zone(vm_size_t start_size, unsigned flags) {
 	char	**p;
 	char	*c;
 	/* Given that all environment variables start with "Malloc" we optimize by scanning quickly first the environment, therefore avoiding repeated calls to getenv() */
-	malloc_debug_file = stderr;
+	malloc_debug_file = STDERR_FILENO;
 	for (p = env; (c = *p) != NULL; ++p) {
 	    if (!strncmp(c, "Malloc", 6)) {
 		set_flags_from_environment(); 
@@ -406,9 +407,12 @@ malloc_get_zone_name(malloc_zone_t *zone) {
 }
 
 /*
- * XXX malloc_printf cannot handle the %ls, %a and %A formats.  It must also not
- * be used for the printing of vectors, or with formats with positional arguments.
+ * XXX malloc_printf now uses _simple_{,v}dprintf.  It only deals with a
+ * subset of printf format specifiers, but it doesn't call malloc.
  */
+void _simple_dprintf(int, const char *, ...);
+void _simple_vdprintf(int, const char *, va_list);
+
 void
 malloc_printf(const char *format, ...)
 {
@@ -416,12 +420,12 @@ malloc_printf(const char *format, ...)
 
     if (__is_threaded) {
 	/* XXX somewhat rude 'knowing' that pthread_t is a pointer */
-	fprintf(malloc_debug_file, "%s(%d,%p) malloc: ", getprogname(), getpid(), (void *)pthread_self());
+	_simple_dprintf(malloc_debug_file, "%s(%d,%p) malloc: ", getprogname(), getpid(), (void *)pthread_self());
     } else {
-	fprintf(malloc_debug_file, "%s(%d) malloc: ", getprogname(), getpid());
+	_simple_dprintf(malloc_debug_file, "%s(%d) malloc: ", getprogname(), getpid());
     }
     va_start(ap, format);
-    vfprintf(malloc_debug_file, format, ap);
+    _simple_vdprintf(malloc_debug_file, format, ap);
     va_end(ap);
 }
 

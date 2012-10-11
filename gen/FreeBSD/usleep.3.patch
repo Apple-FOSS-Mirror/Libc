@@ -1,5 +1,5 @@
---- usleep.3.orig	Tue Oct 28 18:01:58 2003
-+++ usleep.3	Tue Oct 28 18:07:33 2003
+--- /Volumes/XDisk/tmp/Libc/gen/FreeBSD/usleep.3.orig	2002-12-28 16:59:09.000000000 -0800
++++ /Volumes/XDisk/tmp/Libc/gen/FreeBSD/usleep.3	2004-10-24 17:08:28.000000000 -0700
 @@ -37,7 +37,7 @@
  .Os
  .Sh NAME

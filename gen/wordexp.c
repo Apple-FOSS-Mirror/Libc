@@ -52,6 +52,8 @@ WITH THE ACCESS, USE OR PERFORMANCE OF THIS SOFTWARE.
  * NOT fully functional
  */
 
+#include "xlocale_private.h"
+
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
@@ -94,9 +96,10 @@ wordexp(const char *words, wordexp_t *pwordexp, int flags)
         const char *sp;
         char *dp;
         int status = 0;
+	locale_t loc = __current_locale();
         
 	/* devour leading white space */
-	for(ccp = words; *ccp != 0 && isspace(*ccp); )
+	for(ccp = words; *ccp != 0 && isspace_l(*ccp, loc); )
 	    ccp++;
 	/* skip comments */
 	if(*ccp == '#')
@@ -130,7 +133,7 @@ wordexp(const char *words, wordexp_t *pwordexp, int flags)
 
             if (*sp == 0)
                 class = EOS;
-            else if (isspace(*sp))
+            else if (isspace_l(*sp, loc))
                 class = SPACE;
             else if (*sp == '"')
                 class = QUOTE;

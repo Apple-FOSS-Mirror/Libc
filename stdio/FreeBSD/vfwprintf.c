@@ -40,7 +40,7 @@ static char sccsid[] = "@(#)vfprintf.c	8.1 (Berkeley) 6/4/93";
 #endif /* LIBC_SCCS and not lint */
 #endif
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: src/lib/libc/stdio/vfwprintf.c,v 1.20 2004/05/02 20:09:14 obrien Exp $");
+__FBSDID("$FreeBSD: src/lib/libc/stdio/vfwprintf.c,v 1.23 2004/08/26 06:25:28 des Exp $");
 
 /*
  * Actual wprintf innards.
@@ -648,7 +648,7 @@ __vfwprintf(FILE *fp, const wchar_t *fmt0, va_list ap)
 #endif
 	convbuf = NULL;
 	/* sorry, fwprintf(read_only_file, L"") returns WEOF, not 0 */
-	if (cantwrite(fp))
+	if (prepwrite(fp) != 0)
 		return (EOF);
 
 	/* optimise fprintf(stderr) (and other unbuffered Unix files) */
@@ -1232,6 +1232,7 @@ number:			if ((dprec = prec) >= 0)
 	}
 done:
 error:
+	va_end(orgap);
 	if (convbuf != NULL)
 		free(convbuf);
 	if (__sferror(fp))
@@ -1268,7 +1269,7 @@ __find_arguments (const wchar_t *fmt0, va_list ap, union arg **argtable)
 	 */
 #define ADDTYPE(type) \
 	((nextarg >= tablesize) ? \
-		__grow_type_table(nextarg, &typetable, &tablesize) : 0, \
+		__grow_type_table(nextarg, &typetable, &tablesize) : (void)0, \
 	(nextarg > tablemax) ? tablemax = nextarg : 0, \
 	typetable[nextarg++] = type)
 

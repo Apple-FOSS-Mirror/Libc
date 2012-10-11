@@ -1,5 +1,5 @@
 # searching ppc directory as a fallback to avoid unnecessary code duplication
-.PATH: ${.CURDIR}/ppc/sys
+.PATH: ${.CURDIR}/ppc/sys ${.CURDIR}/ppc64/sys
 
 MDSRCS+=  ATPgetreq.s \
 	ATPgetrsp.s \
@@ -10,9 +10,15 @@ MDSRCS+=  ATPgetreq.s \
 	ATsocket.s \
 	OSAtomic.s \
 	_exit.s \
+	__fcntl.s \
 	_getlogin.s \
+	__ioctl.s \
 	_longjmp.s \
+	__mmap.s \
 	_pthread_kill.s \
+	__pthread_canceled.s \
+	__pthread_markcancel.s \
+	__semwait_signal.s \
 	_setjmp.s \
 	_setlogin.s \
 	_sysctl.s \
@@ -31,7 +37,6 @@ MDSRCS+=  ATPgetreq.s \
 	audit.s \
 	auditctl.s \
 	auditon.s \
-	auditsvc.s \
 	bind.s \
 	cerror.s \
 	chdir.s \
@@ -50,7 +55,6 @@ MDSRCS+=  ATPgetreq.s \
 	fchflags.s \
 	fchmod.s \
 	fchown.s \
-	fcntl.s \
 	fgetxattr.s  \
 	fhopen.s \
 	flistxattr.s  \
@@ -72,6 +76,7 @@ MDSRCS+=  ATPgetreq.s \
 	getauid.s \
 	getdirentries.s \
 	getdirentriesattr.s \
+	getdtablesize.s \
 	getegid.s \
 	geteuid.s \
 	getfh.s \
@@ -92,7 +97,6 @@ MDSRCS+=  ATPgetreq.s \
 	getsockopt.s \
 	getuid.s \
 	getxattr.s  \
-	ioctl.s \
 	issetugid.s \
 	kevent.s \
 	kill.s \
@@ -100,6 +104,7 @@ MDSRCS+=  ATPgetreq.s \
 	kqueue_from_portset_np.s \
 	kqueue_portset_np.s \
 	ktrace.s \
+	lchown.s \
 	link.s \
 	lio_listio.s \
 	listen.s \
@@ -118,24 +123,21 @@ MDSRCS+=  ATPgetreq.s \
 	mknod.s \
 	mlock.s \
 	mlockall.s \
-	mmap.s \
 	mount.s \
-	mprotect.s \
 	msgctl.s \
 	msgget.s \
 	msgrcv.s \
 	msgsnd.s \
 	msgsys.s \
-	msync.s \
 	munlock.s \
 	munlockall.s \
-	munmap.s \
 	new_system_shared_regions.s \
 	nfsclnt.s \
 	nfssvc.s \
 	open.s \
 	pathconf.s \
 	pipe.s \
+	poll.s \
 	posix_madvise.s \
 	ppc_gettimeofday.s \
 	pread.s \
@@ -225,8 +227,15 @@ MDSRCS+=  ATPgetreq.s \
 	write.s \
 	writev.s 
 
+MISRCS+= fcntl64.c ioctl64.c
+
 .for _src in fhopen.s getfh.s nfsclnt.s
 CFLAGS-${_src} += -DNFSCLIENT
 .endfor
 
 CFLAGS-nfssvc.s += -DNFSSERVER
+
+# for ppc64-specific assembly code, use the SYS.h in ppc/sys
+.for _src in __fcntl.s __ioctl.s
+CFLAGS-${_src} += -I${.CURDIR}/ppc/sys
+.endfor

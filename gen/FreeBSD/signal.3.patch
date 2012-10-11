@@ -1,6 +1,6 @@
---- signal.3.orig	Tue May 20 15:21:03 2003
-+++ signal.3	Sun Nov 30 22:08:18 2003
-@@ -47,9 +47,7 @@
+--- /Volumes/XDisk/tmp/Libc/gen/FreeBSD/signal.3.orig	2004-07-03 15:30:08.000000000 -0700
++++ /Volumes/XDisk/tmp/Libc/gen/FreeBSD/signal.3	2004-10-24 17:08:28.000000000 -0700
+@@ -48,9 +48,7 @@
  .Ft void \*(lp*
  .Fn signal "int sig" "void \*(lp*func\*(rp\*(lpint\*(rp\*(rp\*(rp\*(lpint"
  .Pp

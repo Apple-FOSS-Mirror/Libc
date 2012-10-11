@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -52,7 +50,7 @@
 #define _POSIX_PTHREAD_MACHDEP_H
 
 #ifdef __LP64__
-#define _PTHREAD_TSD_OFFSET 0x68
+#define _PTHREAD_TSD_OFFSET 0x60
 #else
 #define _PTHREAD_TSD_OFFSET 0x48
 #endif  /* __LP64__ */

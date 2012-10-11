@@ -15,8 +15,10 @@ MISRCS+= gmon.c
 # mcount cannot be compiled with profiling
 gmon.po: 
 	${CC} -O -pipe -arch ${MACHINE_ARCH} -Wmost -g -fno-common \
-		-no-cpp-precomp -force_cpusubtype_ALL -I${.CURDIR}/include  \
-		-I${.CURDIR}/include/objc \
+		-no-cpp-precomp -force_cpusubtype_ALL \
+		-I${.CURDIR}/include \
+		-I${INCLUDEDIR} \
+		-I${INCLUDEDIR}/objc \
 		${PRIVINC} \
 		-c ${.CURDIR}/gmon/gmon.c -o gmon.po
 

@@ -10,6 +10,8 @@ CFLAGS-regcomp-fbsd.c+= -DPOSIX_MISTAKE
 FBSDHDRS= cclass.h cname.h engine.c regex2.h utils.h
 .include "Makefile.fbsd_end"
 
+UNIX03SRCS += regcomp.c
+
 .if ${LIB} == "c"
 .include "Makefile.fbsd_begin"
 FBSDMAN3= regex.3

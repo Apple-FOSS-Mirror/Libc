@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -142,8 +140,10 @@ sighold(sig)
 {
 	sigset_t mask;
 
-	if ((sig < 0) || (sig > NSIG))
-		return(EINVAL);
+	if ((sig <= 0) || (sig >= NSIG)) {
+		errno = EINVAL;
+		return(-1);
+	}
 	sigemptyset(&mask);
 	sigaddset(&mask, sig);
 	return(sigprocmask(SIG_BLOCK, &mask,(sigset_t *)0));
@@ -155,8 +155,10 @@ sigrelse(sig)
 {
 	sigset_t mask;
 
-	if ((sig < 0) || (sig > NSIG))
-		return(EINVAL);
+	if ((sig <= 0) || (sig >= NSIG)) {
+		errno = EINVAL;
+		return(-1);
+	}
 	sigemptyset(&mask);
 	sigaddset(&mask, sig);
 	return(sigprocmask(SIG_UNBLOCK, &mask,(sigset_t *)0));
@@ -170,3 +172,34 @@ sigignore(sig)
 	return (signal(sig, SIG_IGN) == SIG_ERR ? -1 : 0);
 }
 
+void (*sigset(int sig, void (*disp)(int)))(int) {
+	sigset_t omask;
+	int blocked;
+	struct sigaction oact;
+
+	if ((sig <= 0) || (sig >= NSIG)) {
+		errno = EINVAL;
+		return (SIG_ERR);
+	}
+	if (-1 == sigprocmask(0, NULL, &omask))
+		return (SIG_ERR);
+	blocked = sigismember(&omask, sig);
+	if (disp == SIG_HOLD) {
+		if (blocked)
+			return (SIG_HOLD);
+		if ((-1 == sigaction(sig, NULL, &oact)) ||
+		    (-1 == sighold(sig)))
+			return (SIG_ERR);
+		return (sig_t)oact.sa_handler;
+	} else {
+		if (blocked) {
+			if (-1 == sigrelse(sig))
+				return (SIG_ERR);
+		}
+		sig_t rv = signal(sig, disp);
+		if (rv != SIG_ERR)
+			return blocked ? SIG_HOLD : rv;
+		else
+			return (rv);
+	}
+}

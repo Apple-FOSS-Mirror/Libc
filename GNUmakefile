@@ -9,9 +9,13 @@ ifndef RC_ARCHS
 RC_$(ARCH) = 1
 RC_ARCHS = $(ARCH)
 endif
-# temporary disable multi-threaded builds, which are failing; see 3683272
-#BSDMAKE = bsdmake -j 2
-BSDMAKE = bsdmake
+ifdef ALTUSRLOCALLIBSYSTEM
+LIBSYS = $(ALTUSRLOCALLIBSYSTEM)
+else
+LIBSYS = $(NEXT_ROOT)/usr/local/lib/system
+endif
+NJOBS = $(shell perl -e '$$n = `/usr/sbin/sysctl -n hw.ncpu`; printf "%d\n", $$n < 2 ? 2 : ($$n * 1.5)')
+BSDMAKE = bsdmake -j $(NJOBS)
 
 # Remove the arch stuff, since we know better here.  
 LOCAL_CFLAGS = $(filter-out -arch ppc -arch ppc64 -arch i386,$(RC_CFLAGS))
@@ -58,7 +62,14 @@ build: build-profile
 install: BI-install-profile
 endif
 
-build-static: autopatch build-ppc-static build-ppc64-static build-i386-static
+# Because of 3780028, there are random failures on HFS because the
+# CC_PRINT_OPTIONS_FILE can't be created.  So we touch it first.
+ifneq ($(CC_PRINT_OPTIONS_FILE),)
+$(CC_PRINT_OPTIONS_FILE):
+	touch $(CC_PRINT_OPTIONS_FILE)
+endif
+
+build-static: autopatch $(CC_PRINT_OPTIONS_FILE) build-ppc-static build-ppc64-static build-i386-static
 	@echo "Creating final libc_static.a"
 ifeq ($(words $(RC_ARCHS)),1)
 	cp -p "$(OBJROOT)/obj.$(RC_ARCHS)/libc_static.a" "$(SYMROOT)"
@@ -67,7 +78,7 @@ else
 		$(foreach A,$(RC_ARCHS),-arch $(A) "$(OBJROOT)/obj.$(A)/libc_static.a") \
 		-output $(SYMROOT)/libc_static.a
 endif
-build-profile: autopatch build-ppc-profile build-ppc64-profile build-i386-profile
+build-profile: autopatch $(CC_PRINT_OPTIONS_FILE) build-ppc-profile build-ppc64-profile build-i386-profile
 	@echo "Creating final libc_profile.a"
 ifeq ($(words $(RC_ARCHS)),1)
 	cp -p "$(OBJROOT)/obj.$(RC_ARCHS)/libc_profile.a" "$(SYMROOT)"
@@ -76,7 +87,7 @@ else
 		$(foreach A,$(RC_ARCHS),-arch $(A) "$(OBJROOT)/obj.$(A)/libc_profile.a") \
 		-output $(SYMROOT)/libc_profile.a
 endif
-build-debug: autopatch build-ppc-debug build-ppc64-debug build-i386-debug
+build-debug: autopatch $(CC_PRINT_OPTIONS_FILE) build-ppc-debug build-ppc64-debug build-i386-debug
 	@echo "Creating final libc_debug.a"
 ifeq ($(words $(RC_ARCHS)),1)
 	cp -p "$(OBJROOT)/obj.$(RC_ARCHS)/libc_debug.a" "$(SYMROOT)"
@@ -85,7 +96,7 @@ else
 		$(foreach A,$(RC_ARCHS),-arch $(A) "$(OBJROOT)/obj.$(A)/libc_debug.a") \
 		-output $(SYMROOT)/libc_debug.a
 endif
-build-dynamic: autopatch build-ppc-dynamic build-ppc64-dynamic build-i386-dynamic
+build-dynamic: autopatch $(CC_PRINT_OPTIONS_FILE) build-ppc-dynamic build-ppc64-dynamic build-i386-dynamic
 	@echo "Creating final libc.a"
 ifeq ($(words $(RC_ARCHS)),1)
 	cp -p "$(OBJROOT)/obj.$(RC_ARCHS)/libc.a" "$(SYMROOT)"
@@ -95,132 +106,131 @@ else
 		-output $(SYMROOT)/libc.a
 endif
 build-ppc-static:
-	@if [ ! -z "$(RC_ppc)" ]; then \
-		mkdir -p $(OBJROOT)/obj.ppc ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
-			MAKEFLAGS="" CFLAGS="-arch ppc $(LOCAL_CFLAGS)" $(BSDMAKE) libc_static.a;\
-	fi
+ifneq ($(RC_ppc),)
+	mkdir -p $(OBJROOT)/obj.ppc ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
+		MAKEFLAGS="" CFLAGS="-arch ppc $(LOCAL_CFLAGS)" $(BSDMAKE) libc_static.a
+endif
 build-ppc64-static:
-	@if [ ! -z "$(RC_ppc64)" ]; then \
-		mkdir -p $(OBJROOT)/obj.ppc64 ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
-			MAKEFLAGS="" CFLAGS="-arch ppc64 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_static.a;\
-	fi
+ifneq ($(RC_ppc64),)
+	mkdir -p $(OBJROOT)/obj.ppc64 ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
+		MAKEFLAGS="" CFLAGS="-arch ppc64 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_static.a
+endif
 build-i386-static:
-	@if [ ! -z "$(RC_i386)" ]; then \
-		mkdir -p $(OBJROOT)/obj.i386 ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
-			MAKEFLAGS="" CFLAGS="-arch i386 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_static.a;\
-	fi
+ifneq ($(RC_i386),)
+	mkdir -p $(OBJROOT)/obj.i386 ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
+		MAKEFLAGS="" CFLAGS="-arch i386 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_static.a
+endif
 build-ppc-profile:
-	@if [ ! -z "$(RC_ppc)" ]; then \
-		mkdir -p $(OBJROOT)/obj.ppc ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
-			MAKEFLAGS="" CFLAGS="-arch ppc $(LOCAL_CFLAGS)" $(BSDMAKE) libc_profile.a;\
-	fi
+ifneq ($(RC_ppc),)
+	mkdir -p $(OBJROOT)/obj.ppc ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
+		MAKEFLAGS="" CFLAGS="-arch ppc $(LOCAL_CFLAGS)" $(BSDMAKE) libc_profile.a
+endif
 build-ppc64-profile:
-	@if [ ! -z "$(RC_ppc64)" ]; then \
-		mkdir -p $(OBJROOT)/obj.ppc64 ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
-			MAKEFLAGS="" CFLAGS="-arch ppc64 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_profile.a;\
-	fi
+ifneq ($(RC_ppc64),)
+	mkdir -p $(OBJROOT)/obj.ppc64 ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
+		MAKEFLAGS="" CFLAGS="-arch ppc64 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_profile.a
+endif
 build-i386-profile:
-	@if [ ! -z "$(RC_i386)" ]; then \
-		mkdir -p $(OBJROOT)/obj.i386 ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
-			MAKEFLAGS="" CFLAGS="-arch i386 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_profile.a;\
-	fi
+ifneq ($(RC_i386),)
+	mkdir -p $(OBJROOT)/obj.i386 ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
+		MAKEFLAGS="" CFLAGS="-arch i386 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_profile.a
+endif
 build-ppc-debug:
-	@if [ ! -z "$(RC_ppc)" ]; then \
-		mkdir -p $(OBJROOT)/obj.ppc ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
-			MAKEFLAGS="" CFLAGS="-arch ppc $(LOCAL_CFLAGS)" $(BSDMAKE) libc_debug.a;\
-	fi
+ifneq ($(RC_ppc),)
+	mkdir -p $(OBJROOT)/obj.ppc ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
+		MAKEFLAGS="" CFLAGS="-arch ppc $(LOCAL_CFLAGS)" $(BSDMAKE) libc_debug.a
+endif
 build-ppc64-debug:
-	@if [ ! -z "$(RC_ppc64)" ]; then \
-		mkdir -p $(OBJROOT)/obj.ppc64 ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
-			MAKEFLAGS="" CFLAGS="-arch ppc64 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_debug.a;\
-	fi
+ifneq ($(RC_ppc64),)
+	mkdir -p $(OBJROOT)/obj.ppc64 ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
+		MAKEFLAGS="" CFLAGS="-arch ppc64 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_debug.a
+endif
 build-i386-debug:
-	@if [ ! -z "$(RC_i386)" ]; then \
-		mkdir -p $(OBJROOT)/obj.i386 ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
-			MAKEFLAGS="" CFLAGS="-arch i386 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_debug.a;\
-	fi
+ifneq ($(RC_i386),)
+	mkdir -p $(OBJROOT)/obj.i386 ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
+		MAKEFLAGS="" CFLAGS="-arch i386 $(LOCAL_CFLAGS)" $(BSDMAKE) libc_debug.a
+endif
 build-ppc-dynamic:
-	@if [ ! -z "$(RC_ppc)" ]; then \
-		mkdir -p $(OBJROOT)/obj.ppc ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
-			MAKEFLAGS="" CFLAGS="-arch ppc $(LOCAL_CFLAGS)" $(BSDMAKE) libc.a;\
-	fi
+ifneq ($(RC_ppc),)
+	mkdir -p $(OBJROOT)/obj.ppc ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
+		MAKEFLAGS="" CFLAGS="-arch ppc $(LOCAL_CFLAGS)" $(BSDMAKE) libc.a
+endif
 build-ppc64-dynamic:
-	@if [ ! -z "$(RC_ppc64)" ]; then \
-		mkdir -p $(OBJROOT)/obj.ppc64 ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
-			MAKEFLAGS="" CFLAGS="-arch ppc64 $(LOCAL_CFLAGS)" $(BSDMAKE) libc.a;\
-	fi
+ifneq ($(RC_ppc64),)
+	mkdir -p $(OBJROOT)/obj.ppc64 ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
+		MAKEFLAGS="" CFLAGS="-arch ppc64 $(LOCAL_CFLAGS)" $(BSDMAKE) libc.a
+endif
 build-i386-dynamic:
-	@if [ ! -z "$(RC_i386)" ]; then \
-		mkdir -p $(OBJROOT)/obj.i386 ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
-			MAKEFLAGS="" CFLAGS="-arch i386 $(LOCAL_CFLAGS)" $(BSDMAKE) libc.a;\
-	fi
-
+ifneq ($(RC_i386),)
+	mkdir -p $(OBJROOT)/obj.i386 ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
+		MAKEFLAGS="" CFLAGS="-arch i386 $(LOCAL_CFLAGS)" $(BSDMAKE) libc.a
+endif
 build-ppc:
-	@if [ ! -z "$(RC_ppc)" ]; then \
-		mkdir -p $(OBJROOT)/obj.ppc ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
-			MAKEFLAGS="" CFLAGS="-arch ppc $(LOCAL_CFLAGS)" $(BSDMAKE) build;\
-	fi
+ifneq ($(RC_ppc),)
+	mkdir -p $(OBJROOT)/obj.ppc ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
+		MAKEFLAGS="" CFLAGS="-arch ppc $(LOCAL_CFLAGS)" $(BSDMAKE) build
+endif
 build-ppc64:
-	@if [ ! -z "$(RC_ppc64)" ]; then \
-		mkdir -p $(OBJROOT)/obj.ppc64 ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
-			MAKEFLAGS="" CFLAGS="-arch ppc64 $(LOCAL_CFLAGS)" $(BSDMAKE) build;\
-	fi
+ifneq ($(RC_ppc64),)
+	mkdir -p $(OBJROOT)/obj.ppc64 ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
+		MAKEFLAGS="" CFLAGS="-arch ppc64 $(LOCAL_CFLAGS)" $(BSDMAKE) build
+endif
 build-i386:
-	@if [ ! -z "$(RC_i386)" ]; then \
-		mkdir -p $(OBJROOT)/obj.i386 ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
-			MAKEFLAGS="" CFLAGS="-arch i386 $(LOCAL_CFLAGS)" $(BSDMAKE) build;\
-	fi
+ifneq ($(RC_i386),)
+	mkdir -p $(OBJROOT)/obj.i386 ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
+		MAKEFLAGS="" CFLAGS="-arch i386 $(LOCAL_CFLAGS)" $(BSDMAKE) build
+endif
 
 # We have to separately call bsdmake to patch the FreeBSD files, because of
 # the way its cache works, it would otherwise pick a file in ${SYMROOT}, even
 # over a .s file.
 autopatch:
-	@if [ ! -z "$(RC_i386)" ]; then \
-	    MACHINE_ARCH="i386" $(BSDMAKE) autopatch; \
-	fi
-	@if [ ! -z "$(RC_ppc)" ]; then \
-	    MACHINE_ARCH="ppc" $(BSDMAKE) autopatch; \
-	fi
-	@if [ ! -z "$(RC_ppc64)" ]; then \
-	    MACHINE_ARCH="ppc64" $(BSDMAKE) autopatch; \
-	fi
+ifneq ($(RC_i386),)
+	MACHINE_ARCH="i386" $(BSDMAKE) autopatch
+endif
+ifneq ($(RC_ppc),)
+	MACHINE_ARCH="ppc" $(BSDMAKE) autopatch
+endif
+ifneq ($(RC_ppc64),)
+	MACHINE_ARCH="ppc64" $(BSDMAKE) autopatch
+endif
 
 installsrc:
 	$(_v) pax -rw . "$(SRCROOT)"
 
-installhdrs-real:
+installhdrs-real: $(CC_PRINT_OPTIONS_FILE)
 	MAKEOBJDIR="$(OBJROOT)" DESTDIR="$(DSTROOT)" MAKEFLAGS="" \
 		$(BSDMAKE) installhdrs
-	@if [ ! -z "$(RC_i386)" ]; then \
-		mkdir -p "$(OBJROOT)/obj.i386" ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
-		MAKEFLAGS="" $(BSDMAKE) installhdrs-md ; \
-	fi
-	@if [ ! -z "$(RC_ppc)" ]; then \
-		mkdir -p "$(OBJROOT)/obj.ppc" ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
-		MAKEFLAGS="" $(BSDMAKE) installhdrs-md ; \
-	fi
-	@if [ ! -z "$(RC_ppc64)" ]; then \
-		mkdir -p "$(OBJROOT)/obj.ppc64" ; \
-		MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
-		MAKEFLAGS="" $(BSDMAKE) installhdrs-md ; \
-	fi
+ifneq ($(RC_i386),)
+	mkdir -p "$(OBJROOT)/obj.i386" ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.i386" MACHINE_ARCH="i386" \
+	    MAKEFLAGS="" $(BSDMAKE) installhdrs-md
+endif
+ifneq ($(RC_ppc),)
+	mkdir -p "$(OBJROOT)/obj.ppc" ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc" MACHINE_ARCH="ppc" \
+	    MAKEFLAGS="" $(BSDMAKE) installhdrs-md
+endif
+ifneq ($(RC_ppc64),)
+	mkdir -p "$(OBJROOT)/obj.ppc64" ; \
+	MAKEOBJDIR="$(OBJROOT)/obj.ppc64" MACHINE_ARCH="ppc64" \
+	    MAKEFLAGS="" $(BSDMAKE) installhdrs-md
+endif
 
 BI-install-static: build-static
 	mkdir -p $(DSTROOT)/usr/local/lib/system
@@ -238,6 +248,13 @@ BI-install-profile: build-profile
 			$(DSTROOT)/usr/local/lib/system; \
 		ranlib "$(DSTROOT)/usr/local/lib/system/libc_profile.a"; \
 	fi
+ifneq ($(RC_ppc),)
+	if [ -f "$(OBJROOT)/obj.ppc/libc-ldbl128_profile.a" ]; then \
+		echo "Installing libldbl128_profile.a" ; \
+		$(SRCROOT)/make_libldbl128 "$(OBJROOT)/obj.ppc/libc-ldbl128_profile.a" \
+			"_profile" "$(DSTROOT)/usr/local/lib/system" $(LIBSYS) ; \
+	fi
+endif
 BI-install-debug: build-debug
 	mkdir -p $(DSTROOT)/usr/local/lib/system
 	if [ -f "$(SYMROOT)/libc_debug.a" ]; then \
@@ -246,6 +263,13 @@ BI-install-debug: build-debug
 			$(DSTROOT)/usr/local/lib/system; \
 		ranlib "$(DSTROOT)/usr/local/lib/system/libc_debug.a"; \
 	fi
+ifneq ($(RC_ppc),)
+	if [ -f "$(OBJROOT)/obj.ppc/libc-ldbl128_debug.a" ]; then \
+		echo "Installing libldbl128_debug.a" ; \
+		$(SRCROOT)/make_libldbl128 "$(OBJROOT)/obj.ppc/libc-ldbl128_debug.a" \
+			"_debug" "$(DSTROOT)/usr/local/lib/system" $(LIBSYS) ; \
+	fi
+endif
 BI-install-dynamic: build-dynamic
 	mkdir -p $(DSTROOT)/usr/local/lib/system
 	if [ -f "$(SYMROOT)/libc.a" ]; then \
@@ -254,6 +278,13 @@ BI-install-dynamic: build-dynamic
 			$(DSTROOT)/usr/local/lib/system; \
 		ranlib "$(DSTROOT)/usr/local/lib/system/libc.a"; \
 	fi
+ifneq ($(RC_ppc),)
+	if [ -f "$(OBJROOT)/obj.ppc/libc-ldbl128.a" ]; then \
+		echo "Installing libldbl128.a" ; \
+		$(SRCROOT)/make_libldbl128 "$(OBJROOT)/obj.ppc/libc-ldbl128.a" \
+			"" "$(DSTROOT)/usr/local/lib/system" $(LIBSYS) ; \
+	fi
+endif
 
 # Don't use -j here; it may try to make links before the files are copied
 install-man:

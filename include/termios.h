@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -29,9 +27,9 @@
 #include <sys/termios.h>
 #include <_types.h>
 
-#ifndef _PID_T_DECLARED
-typedef __osx_pid_t	pid_t;
-#define _PID_T_DECLARED
+#ifndef _PID_T
+typedef __darwin_pid_t	pid_t;
+#define _PID_T
 #endif
 
 __BEGIN_DECLS

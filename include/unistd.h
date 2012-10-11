@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -70,86 +68,112 @@
 #ifndef _UNISTD_H_
 #define	_UNISTD_H_
 
-#include <sys/cdefs.h>
-#include <sys/types.h>
-#include <sys/unistd.h>		/* XXX needs to go away */
+#include <_types.h>
 
+#include <sys/cdefs.h>
+#include <sys/unistd.h>
+
+#ifndef _GID_T
+#define _GID_T
+typedef __darwin_gid_t		gid_t;
+#endif
+
+#ifndef _INTPTR_T
+#define _INTPTR_T
+typedef __darwin_intptr_t	intptr_t;
+#endif
+
+#ifndef _OFF_T
+#define _OFF_T
+typedef __darwin_off_t		off_t;
+#endif
+
+#ifndef _PID_T
+#define _PID_T
+typedef __darwin_pid_t		pid_t;
+#endif
+
+#ifndef _SIZE_T
+#define _SIZE_T
+/* DO NOT REMOVE THIS COMMENT: fixincludes needs to see:
+ * _GCC_SIZE_T */
+typedef __darwin_size_t		size_t;
+#endif
+
+#ifndef	_SSIZE_T
+#define	_SSIZE_T
+typedef	__darwin_ssize_t	ssize_t;
+#endif
+
+#ifndef _UID_T
+#define _UID_T
+typedef __darwin_uid_t		uid_t;	/* user id 	*/
+#endif
+
+#ifndef _USECONDS_T
+#define _USECONDS_T
+typedef __darwin_useconds_t	useconds_t;
+#endif
+
+#ifndef _POSIX_C_SOURCE
+#ifndef _UUID_T
+#define _UUID_T
+typedef __darwin_uuid_t		uuid_t;
+#endif /* _UUID_T */
+#endif /* _POSIX_C_SOURCE */
 
 #define	 STDIN_FILENO	0	/* standard input file descriptor */
 #define	STDOUT_FILENO	1	/* standard output file descriptor */
 #define	STDERR_FILENO	2	/* standard error file descriptor */
 
 #ifndef NULL
-#ifdef __GNUG__
-#define NULL __null
-#else /* ! __GNUG__ */
-#ifndef __cplusplus
-#define NULL ((void *)0)
-#else /* __cplusplus */
-#define NULL 0
-#endif /* ! __cplusplus */
-#endif /* __GNUG__ */
+#define NULL __DARWIN_NULL
 #endif /* ! NULL */
 
-#ifdef _POSIX_VERSION		/* XXX <sys/unistd.h> */
-#undef _POSIX_VERSION
-#endif
-#ifdef _POSIX2_VERSION		/* XXX <sys/unistd.h> */
-#undef _POSIX2_VERSION
-#endif
-#ifdef _POSIX_CHOWN_RESTRICTED		/* XXX <sys/unistd.h> */
-#undef _POSIX_CHOWN_RESTRICTED
-#endif
-#ifdef _POSIX_NO_TRUNC		/* XXX <sys/unistd.h> */
-#undef _POSIX_NO_TRUNC
-#endif
-
 /* Version test macros */
-#define	_POSIX_VERSION			200112L
-#define	_POSIX2_VERSION			200112L
-
+/* _POSIX_VERSION and _POSIX2_VERSION from sys/unistd.h */
 #define	_XOPEN_VERSION			600		/* [XSI] */
 #define _XOPEN_XCU_VERSION		4		/* Older standard */
 
 
 /* Please keep this list in the same order as the applicable standard */
 #define	_POSIX_ADVISORY_INFO		(-1)		/* [ADV] */
-#define	_POSIX_ASYNCHRONOUS_IO		200112L		/* [AIO] */
+#define	_POSIX_ASYNCHRONOUS_IO		(-1)		/* [AIO] */
 #define	_POSIX_BARRIERS			(-1)		/* [BAR] */
 #define	_POSIX_CHOWN_RESTRICTED		200112L
 #define	_POSIX_CLOCK_SELECTION		(-1)		/* [CS] */
 #define	_POSIX_CPUTIME			(-1)		/* [CPT] */
-#define	_POSIX_FSYNC			200112L		/* [FSC] */
+#define	_POSIX_FSYNC			(-1)		/* [FSC] */
 #define	_POSIX_IPV6			200112L
 #define	_POSIX_JOB_CONTROL		200112L
 #define	_POSIX_MAPPED_FILES		200112L		/* [MF] */
-#define	_POSIX_MEMLOCK			200112L		/* [ML] */
-#define	_POSIX_MEMLOCK_RANGE		200112L		/* [MR] */
+#define	_POSIX_MEMLOCK			(-1)		/* [ML] */
+#define	_POSIX_MEMLOCK_RANGE		(-1)		/* [MR] */
 #define	_POSIX_MEMORY_PROTECTION	200112L		/* [MPR] */
 #define	_POSIX_MESSAGE_PASSING		(-1)		/* [MSG] */
 #define	_POSIX_MONOTONIC_CLOCK		(-1)		/* [MON] */
 #define	_POSIX_NO_TRUNC			200112L
 #define	_POSIX_PRIORITIZED_IO		(-1)		/* [PIO] */
 #define	_POSIX_PRIORITY_SCHEDULING	(-1)		/* [PS] */
-#define	_POSIX_RAW_SOCKETS		200112L		/* [RS] */
+#define	_POSIX_RAW_SOCKETS		(-1)		/* [RS] */
 #define	_POSIX_READER_WRITER_LOCKS	200112L		/* [THR] */
 #define	_POSIX_REALTIME_SIGNALS		(-1)		/* [RTS] */
 #define	_POSIX_REGEXP			200112L
-#define	_POSIX_SAVED_IDS		(-1)		/* XXX required */
-#define	_POSIX_SEMAPHORES		200112L		/* [SEM] */
-#define	_POSIX_SHARED_MEMORY_OBJECTS	200112L		/* [SHM] */
+#define	_POSIX_SAVED_IDS		200112L		/* XXX required */
+#define	_POSIX_SEMAPHORES		(-1)		/* [SEM] */
+#define	_POSIX_SHARED_MEMORY_OBJECTS	(-1)		/* [SHM] */
 #define	_POSIX_SHELL			200112L
 #define	_POSIX_SPAWN			(-1)		/* [SPN] */
 #define	_POSIX_SPIN_LOCKS		(-1)		/* [SPI] */
 #define	_POSIX_SPORADIC_SERVER		(-1)		/* [SS] */
-#define	_POSIX_SYNCHRONIZED_IO		200112L		/* [SIO] */
+#define	_POSIX_SYNCHRONIZED_IO		(-1)		/* [SIO] */
 #define	_POSIX_THREAD_ATTR_STACKADDR	200112L		/* [TSA] */
 #define	_POSIX_THREAD_ATTR_STACKSIZE	200112L		/* [TSS] */
 #define	_POSIX_THREAD_CPUTIME		(-1)		/* [TCT] */
 #define	_POSIX_THREAD_PRIO_INHERIT	(-1)		/* [TPI] */
 #define	_POSIX_THREAD_PRIO_PROTECT	(-1)		/* [TPP] */
 #define	_POSIX_THREAD_PRIORITY_SCHEDULING	(-1)	/* [TPS] */
-#define	_POSIX_THREAD_PROCESS_SHARED	200112L		/* [TSH] */
+#define	_POSIX_THREAD_PROCESS_SHARED	(-1)		/* [TSH] */
 #define	_POSIX_THREAD_SAFE_FUNCTIONS	200112L		/* [TSF] */
 #define	_POSIX_THREAD_SPORADIC_SERVER	(-1)		/* [TSP] */
 #define _POSIX_THREADS			200112L		/* [THR] */
@@ -165,11 +189,11 @@
 #endif /* _POSIX_VDISABLE */
 
 #define	_POSIX2_C_BIND			200112L
-#define	_POSIX2_C_DEV			(-1)		/* c99 command */
+#define	_POSIX2_C_DEV			200112L		/* c99 command */
 #define	_POSIX2_CHAR_TERM		200112L
 #define	_POSIX2_FORT_DEV		(-1)		/* fort77 command */
 #define	_POSIX2_FORT_RUN		200112L
-#define	_POSIX2_LOCALEDEF		(-1)		/* localedef command */
+#define	_POSIX2_LOCALEDEF		200112L		/* localedef command */
 #define	_POSIX2_PBS			(-1)
 #define	_POSIX2_PBS_ACCOUNTING		(-1)
 #define	_POSIX2_PBS_CHECKPOINT		(-1)
@@ -180,9 +204,9 @@
 #define	_POSIX2_UPE			200112L	/* XXXX no fc, newgrp, tabs */
 
 #define	_V6_ILP32_OFF32			(-1)
-#define	_V6_ILP32_OFFBIG		0
-#define	_V6_LP64_OFF64			0
-#define	_V6_LPBIG_OFFBIG		(-1)
+#define	_V6_ILP32_OFFBIG		(1)
+#define	_V6_LP64_OFF64			(1)
+#define	_V6_LPBIG_OFFBIG		(1)
 
 #define	_XBS5_ILP32_OFF32		_V6_ILP32_OFF32		/* legacy */
 #define	_XBS5_ILP32_OFFBIG		_V6_ILP32_OFFBIG	/* legacy */
@@ -199,12 +223,10 @@
 #define	_XOPEN_UNIX			(1)
 
 
-#ifndef _POSIX_SOURCE
 #define F_ULOCK         0      /* unlock locked section */
 #define F_LOCK          1      /* lock a section for exclusive use */
 #define F_TLOCK         2      /* test and lock a section for exclusive use */
 #define F_TEST          3      /* test a section for locks by other procs */
-#endif
 
 /* configurable system variables */
 #define	_SC_ARG_MAX			 1
@@ -319,7 +341,7 @@
 #define	_SC_XOPEN_REALTIME		111
 #define	_SC_XOPEN_REALTIME_THREADS	112
 #define	_SC_XOPEN_SHM			113
-#define	_SC_XOPEN_STREAMS		(-1)	/* 114 - Not supported */
+#define	_SC_XOPEN_STREAMS		114
 #define	_SC_XOPEN_UNIX			115
 #define	_SC_XOPEN_VERSION		116
 #define	_SC_XOPEN_XCU_VERSION		121
@@ -363,17 +385,18 @@
 #define	_CS_XBS5_LPBIG_OFFBIG_LIBS		34
 #define	_CS_XBS5_LPBIG_OFFBIG_LINTFLAGS		35
 
-
 __BEGIN_DECLS
 
-void	 _Exit(int) __dead2;
 void	 _exit(int) __dead2;
 int	 access(const char *, int);
-unsigned int alarm(unsigned int);
+unsigned int
+	 alarm(unsigned int);
 int	 chdir(const char *);
 int	 chown(const char *, uid_t, gid_t);
 int	 close(int);
 size_t	 confstr(int, char *, size_t);
+char	*crypt(const char *, const char *);
+char	*ctermid(char *);
 int	 dup(int);
 int	 dup2(int, int);
 int	 execl(const char *, const char *, ...);
@@ -382,77 +405,111 @@ int	 execlp(const char *, const char *, ...);
 int	 execv(const char *, char * const *);
 int	 execve(const char *, char * const *, char * const *);
 int	 execvp(const char *, char * const *);
+int	 fchown(int, uid_t, gid_t);
+int	 fchdir(int);
 pid_t	 fork(void);
 long	 fpathconf(int, int);
+int	 ftruncate(int, off_t);
 char	*getcwd(char *, size_t);
-int	 getdomainname(char *, int);
 gid_t	 getegid(void);
 uid_t	 geteuid(void);
 gid_t	 getgid(void);
 int	 getgroups(int, gid_t []);
+long	 gethostid(void);
+int	 gethostname(char *, size_t);
 char	*getlogin(void);
-int	 getlogin_r(char *, int);
+int	 getlogin_r(char *, size_t);
+int	 getopt(int, char * const [], const char *);
+pid_t	 getpgid(pid_t);
 pid_t	 getpgrp(void);
 pid_t	 getpid(void);
 pid_t	 getppid(void);
+pid_t	 getsid(pid_t);
 uid_t	 getuid(void);
+char	*getwd(char *);			/* obsoleted by getcwd() */
 int	 isatty(int);
-int	 lchown(const char *, uid_t, gid_t);
+int	 lchown(const char *, uid_t, gid_t) __DARWIN_ALIAS(lchown);
 int	 link(const char *, const char *);
+int	 lockf(int, int, off_t);
 off_t	 lseek(int, off_t, int);
+int	 nice(int);
 long	 pathconf(const char *, int);
 int	 pause(void);
-int	 pipe(int *);
+int	 pipe(int [2]);
+ssize_t	 pread(int, void *, size_t, off_t);
+ssize_t	 pwrite(int, const void *, size_t, off_t);
 ssize_t	 read(int, void *, size_t);
+ssize_t  readlink(const char * __restrict, char * __restrict, size_t);
 int	 rmdir(const char *);
-int	 setdomainname(const char *, int);
+int	 setegid(gid_t);
+int	 seteuid(uid_t);
 int	 setgid(gid_t);
 int	 setpgid(pid_t, pid_t);
+#if __DARWIN_UNIX03
+pid_t	 setpgrp(void) __DARWIN_ALIAS(setpgrp);
+#else /* !__DARWIN_UNIX03 */
+int	 setpgrp(pid_t pid, pid_t pgrp);	/* obsoleted by setpgid() */
+#endif /* __DARWIN_UNIX03 */
+int	 setregid(gid_t, gid_t);
+int	 setreuid(uid_t, uid_t);
 pid_t	 setsid(void);
 int	 setuid(uid_t);
-unsigned int	 sleep(unsigned int);
+unsigned int
+	 sleep(unsigned int);
+void     swab(const void * __restrict, void * __restrict, ssize_t);
+int	 symlink(const char *, const char *);
+void	 sync(void);
 long	 sysconf(int);
 pid_t	 tcgetpgrp(int);
 int	 tcsetpgrp(int, pid_t);
+int	 truncate(const char *, off_t);
 char	*ttyname(int);
+#if __DARWIN_UNIX03
+int	 ttyname_r(int, char *, size_t) __DARWIN_ALIAS(ttyname_r);
+#else /* !__DARWIN_UNIX03 */
 char	*ttyname_r(int, char *, size_t);
+#endif /* __DARWIN_UNIX03 */
+useconds_t
+	 ualarm(useconds_t, useconds_t);
 int	 unlink(const char *);
+int	 usleep(useconds_t);
+pid_t	 vfork(void);
 ssize_t	 write(int, const void *, size_t);
 
 extern char *optarg;			/* getopt(3) external variables */
-extern int optind, opterr, optopt, optreset;
-int	 getopt(int, char * const [], const char *);
+extern int optind, opterr, optopt;
 
-#ifndef	_POSIX_SOURCE
-#ifdef	__STDC__
-struct timespec;			/* pselect(3) */
-struct timeval;				/* select(2) */
-#endif
+#ifndef	_POSIX_C_SOURCE
+#include <sys/select.h>
+
+void	 _Exit(int) __dead2;
+int	 accessx_np(const struct accessx_descriptor *, size_t, int *, uid_t);
 int	 acct(const char *);
+int	 add_profil(char *, size_t, unsigned long, unsigned int);
 int	 async_daemon(void);
-char	*brk(const char *);
+void	*brk(const void *);
 int	 chroot(const char *);
-char	*crypt(const char *, const char *);
-void	 encrypt(char *, int);
+#if __DARWIN_UNIX03
+void	 encrypt(char *, int) __DARWIN_ALIAS(encrypt);
+#else /* !__DARWIN_UNIX03 */
+int	 encrypt(char *, int);
+#endif /* __DARWIN_UNIX03 */
 void	 endusershell(void);
-int	 fchdir(int);
-int	 fchown(int, int, int);
-char	*fflagstostr(u_long);
+int	 execvP(const char *, const char *, char * const *);
+char	*fflagstostr(unsigned long);
 int	 fsync(int);
-int	 ftruncate(int, off_t);
 int	 getdtablesize(void);
+int	 getdomainname(char *, int);
 int	 getgrouplist(const char *, int, int *, int *);
-long	 gethostid(void);
-int	 gethostname(char *, int);
 mode_t	 getmode(const void *, mode_t);
 int	 getpagesize(void) __pure2;
 char	*getpass(const char *);
 int	 getpeereid(int, uid_t *, gid_t *);
 int	 getpgid(pid_t _pid);
+int	 getsgroups_np(int *, uuid_t);
 int	 getsid(pid_t _pid);
 char	*getusershell(void);
-char	*getwd(char *);			/* obsoleted by getcwd() */
-int	 lockf(int, int, off_t);
+int	 getwgroups_np(int *, uuid_t);
 int	 initgroups(const char *, int);
 int	 iruserok(unsigned long, int, const char *, const char *);
 int	 issetugid(void);
@@ -462,64 +519,47 @@ int	 mkstemp(char *);
 int	 mkstemps(char *, int);
 char	*mktemp(char *);
 int	 nfssvc(int, void *);
-int	 nice(int);
-ssize_t	 pread(int, void *, size_t, off_t);
-#if 0
-void	 psignal(unsigned int, const char *);
-extern __const char *__const sys_siglist[];
-#else
-#include <signal.h>
-#endif
-int	 profil(char *, int, int, int);
-#ifndef __MWERKS__
-int	 pselect(int, fd_set *, fd_set *, fd_set *,
-	    const struct timespec *, const sigset_t *);
-#endif /* ! __MWERKS__ */
-ssize_t	 pwrite(int, const void *, size_t, off_t);
+int	 profil(char *, size_t, unsigned long, unsigned int);
+int	 pthread_setugid_np(uid_t, gid_t);
+int	 pthread_getugid_np( uid_t *, gid_t *);
 int	 rcmd(char **, int, const char *, const char *, const char *, int *);
-int	 readlink(const char *, char *, int);
 int	 reboot(int);
 int	 revoke(const char *);
 int	 rresvport(int *);
 int	 rresvport_af(int *, int);
 int	 ruserok(const char *, int, const char *, const char *);
-char	*sbrk(int);
-int	 select(int, fd_set *, fd_set *, fd_set *, struct timeval *);
-int	 setegid(gid_t);
-int	 seteuid(uid_t);
+void	*sbrk(int);
+int	 setdomainname(const char *, int);
 int	 setgroups(int, const gid_t *);
 void	 sethostid(long);
 int	 sethostname(const char *, int);
-void	 setkey(const char *);
+#if __DARWIN_UNIX03
+void	 setkey(const char *) __DARWIN_ALIAS(setkey);
+#else /* !__DARWIN_UNIX03 */
+int	 setkey(const char *);
+#endif /* __DARWIN_UNIX03 */
 int	 setlogin(const char *);
 void	*setmode(const char *);
-int	 setpgrp(pid_t pid, pid_t pgrp);	/* obsoleted by setpgid() */
-int	 setregid(gid_t, gid_t);
-int	 setreuid(uid_t, uid_t);
 int	 setrgid(gid_t);
 int	 setruid(uid_t);
+int	 setsgroups_np(int, const uuid_t);
 void	 setusershell(void);
-int	 strtofflags(char **, u_long *, u_long *);
+int	 setwgroups_np(int, const uuid_t);
+int	 strtofflags(char **, unsigned long *, unsigned long *);
 int	 swapon(const char *);
-int	 symlink(const char *, const char *);
-void	 sync(void);
 int	 syscall(int, ...);
-int	 truncate(const char *, off_t);
 int	 ttyslot(void);
-unsigned int	 ualarm(unsigned int, unsigned int);
 int	 undelete(const char *);
 int	 unwhiteout(const char *);
-int	 usleep(unsigned int);
 void	*valloc(size_t);			
-pid_t	 vfork(void);
 
 extern char *suboptarg;			/* getsubopt(3) external variable */
 int	 getsubopt(char **, char * const *, char **);
 
 /*  HFS & HFS Plus semantics system calls go here */
 #ifdef __LP64__
-int    getattrlist(const char*,void*,void*,size_t,unsigned int);
-int    setattrlist(const char*,void*,void*,size_t,unsigned int);
+int    getattrlist(const char*,void*,void*,size_t,unsigned int) __DARWIN_ALIAS(getattrlist);
+int    setattrlist(const char*,void*,void*,size_t,unsigned int) __DARWIN_ALIAS(setattrlist);
 int exchangedata(const char*,const char*,unsigned int);
 int    checkuseraccess(const char*,uid_t,gid_t*,int,int,unsigned int);
 int    getdirentriesattr(int,void*,void*,size_t,unsigned int*,unsigned int*,unsigned int*,unsigned int);
@@ -527,8 +567,8 @@ int    searchfs(const char*,void*,void*,unsigned int,unsigned int,void*);
 
 int fsctl(const char *,unsigned int,void*,unsigned int);
 #else /* __LP64__ */
-int	getattrlist(const char*,void*,void*,size_t,unsigned long);
-int	setattrlist(const char*,void*,void*,size_t,unsigned long);
+int	getattrlist(const char*,void*,void*,size_t,unsigned long) __DARWIN_ALIAS(getattrlist);
+int	setattrlist(const char*,void*,void*,size_t,unsigned long) __DARWIN_ALIAS(setattrlist);
 int exchangedata(const char*,const char*,unsigned long);
 int	checkuseraccess(const char*,uid_t,gid_t*,int,int,unsigned long);
 int	getdirentriesattr(int,void*,void*,size_t,unsigned long*,unsigned long*,unsigned long*,unsigned long);
@@ -537,7 +577,9 @@ int	searchfs(const char*,void*,void*,unsigned long,unsigned long,void*);
 int fsctl(const char *,unsigned long,void*,unsigned long);		
 #endif /* __LP64__ */
 
-#endif /* !_POSIX_SOURCE */
+extern int optreset;
+
+#endif /* !_POSIX_C_SOURCE */
 __END_DECLS
 
 #endif /* !_UNISTD_H_ */

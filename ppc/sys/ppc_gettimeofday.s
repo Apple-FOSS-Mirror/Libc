@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -33,14 +31,18 @@
 MI_ENTRY_POINT(___commpage_gettimeofday)
     ba	_COMM_PAGE_GETTIMEOFDAY
 
-    
+
+/* This syscall is special cased: the timeval is returned in r3/r4.
+ * Note also that the "seconds" field of the timeval is a long, so
+ * it's size is mode dependent.
+ */
 MI_ENTRY_POINT(___ppc_gettimeofday)
     mr      r12,r3              // save ptr to timeval
     SYSCALL_NONAME(gettimeofday,0)
 	mr.     r12,r12             // was timeval ptr null?
 	beq     3f
-	stw     r3,0(r12)
-	stw     r4,4(r12)
+	stg     r3,0(r12)           // "stw" in 32-bit mode, "std" in 64-bit mode
+	stw     r4,GPR_BYTES(r12)
 	li      r3,0
 3:
 	blr

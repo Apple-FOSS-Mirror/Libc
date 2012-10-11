@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -60,6 +58,7 @@ mach_port_t	bootstrap_port = MACH_PORT_NULL;
 mach_port_t	name_server_port = MACH_PORT_NULL;
 mach_port_t	environment_port = MACH_PORT_NULL;
 mach_port_t	service_port = MACH_PORT_NULL;
+semaphore_t	clock_sem = MACH_PORT_NULL;
 mach_port_t	clock_port = MACH_PORT_NULL;
 mach_port_t thread_recycle_port = MACH_PORT_NULL;
 
@@ -83,6 +82,10 @@ mach_init_ports(void)
         /* Get the clock service port for nanosleep */
 	host = mach_host_self();
         kr = host_get_clock_service(host, SYSTEM_CLOCK, &clock_port);
+        if (kr != KERN_SUCCESS) {
+            abort();
+	}
+        kr = semaphore_create(mach_task_self(), &clock_sem, SYNC_POLICY_FIFO, 0);
         if (kr != KERN_SUCCESS) {
             abort();
         }

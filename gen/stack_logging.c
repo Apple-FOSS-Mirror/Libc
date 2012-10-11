@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -36,6 +34,7 @@
 
 extern void spin_lock(int *);
 
+static inline void *allocate_pages(unsigned) __attribute__((always_inline));
 static inline void *allocate_pages(unsigned bytes) {
     void *address;
     if (vm_allocate(mach_task_self(), (vm_address_t *)&address, bytes, 
@@ -46,10 +45,12 @@ static inline void *allocate_pages(unsigned bytes) {
     return (void *)address;
 }
 
+static inline void deallocate_pages(void *, unsigned) __attribute__((always_inline));
 static inline void deallocate_pages(void *ptr, unsigned bytes) {
     vm_deallocate(mach_task_self(), (vm_address_t)ptr, bytes);
 }
 
+static inline void copy_pages(const void *, void *, unsigned) __attribute__((always_inline));
 static inline void copy_pages(const void *source, void *dest, unsigned bytes) {
     if (vm_copy(mach_task_self(), (vm_address_t)source, bytes, (vm_address_t)dest)) memmove(dest, source, bytes);
 }

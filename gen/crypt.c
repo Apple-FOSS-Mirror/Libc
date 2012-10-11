@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -59,18 +57,10 @@
  */
 
 
-/*
- * PR-3509199
- *
- * encrypt() and setkey() should return void, but were returning int.  For
- * backwards compatibility, define __APPLE_PR_3509199_COMPAT__ to continue
- * to return int, even though unistd.h declares void.  We will need to not
- * include unistd.h so as to avoid the prototype mismatch.
- */
-#ifndef __APPLE_PR_3509199_COMPAT__
+#include <sys/cdefs.h>
 #include <unistd.h>
-#endif /* __APPLE_PR_3509199_COMPAT__ */
 #include <limits.h>
+#include <sys/types.h>
 #include <pwd.h>
 #include <stdlib.h>
 
@@ -95,7 +85,7 @@
 /*
  * define "MUST_ALIGN" if your compiler cannot load/store
  * long integers at arbitrary (e.g. odd) memory locations.
- * (Either that or never pass unaligned addresses to des_cipher!)
+ * (Either that or never pass unaligned addresses to __crypt_des_cipher!)
  */
 #if !defined(vax)
 #define	MUST_ALIGN
@@ -111,7 +101,7 @@
  * define "LONG_IS_32_BITS" only if sizeof(long)==4.
  * This avoids use of bit fields (your compiler may be sloppy with them).
  */
-#if !defined(cray)
+#if !defined(cray) && (LONG_BIT == 32)
 #define	LONG_IS_32_BITS
 #endif
 
@@ -128,7 +118,7 @@
 
 /*
  * define "LARGEDATA" to get faster permutations, by using about 72 kilobytes
- * of lookup tables.  This speeds up des_setkey() and des_cipher(), but has
+ * of lookup tables.  This speeds up __crypt_des_setkey() and __crypt_des_cipher(), but has
  * little effect on crypt().
  */
 #if defined(notdef)
@@ -139,8 +129,10 @@
 #ifndef STATIC
 #define	STATIC	static
 #endif
+#ifndef BUILDING_VARIANT
 STATIC void init_des(), init_perm(), permute();
-STATIC int des_cipher(), des_setkey();
+#endif /* BUILDING_VARIANT */
+__private_extern__ int __crypt_des_cipher(), __crypt_des_setkey();
 #ifdef DEBUG
 STATIC prtab();
 #endif
@@ -328,6 +320,7 @@ typedef union {
 #define	PERM3264(d,d0,d1,cpp,p)				\
 	{ C_block tblk; permute(cpp,&tblk,p,4); LOAD (d,d0,d1,tblk); }
 
+#ifndef BUILDING_VARIANT
 STATIC void permute(cp, out, p, chars_in)
 	unsigned char *cp;
 	C_block *out;
@@ -346,11 +339,13 @@ STATIC void permute(cp, out, p, chars_in)
 	} while (--chars_in > 0);
 	STORE(D,D0,D1,*out);
 }
+#endif /* BUILDING_VARIANT */
 #endif /* LARGEDATA */
 
 
 /* =====  (mostly) Standard DES Tables ==================== */
 
+#ifndef BUILDING_VARIANT
 static unsigned char IP[] = {		/* initial permutation */
 	58, 50, 42, 34, 26, 18, 10,  2,
 	60, 52, 44, 36, 28, 20, 12,  4,
@@ -535,7 +530,7 @@ crypt(key, setting)
 			key++;
 		keyblock.b[i] = t;
 	}
-	if (des_setkey((char *)keyblock.b))	/* also initializes "a64toi" */
+	if (__crypt_des_setkey((char *)keyblock.b))	/* also initializes "a64toi" */
 		return (NULL);
 
 	encp = &cryptresult[0];
@@ -545,7 +540,7 @@ crypt(key, setting)
 		 * Involve the rest of the password 8 characters at a time.
 		 */
 		while (*key) {
-			if (des_cipher((char *)&keyblock,
+			if (__crypt_des_cipher((char *)&keyblock,
 			    (char *)&keyblock, 0L, 1))
 				return (NULL);
 			for (i = 0; i < 8; i++) {
@@ -553,7 +548,7 @@ crypt(key, setting)
 					key++;
 				keyblock.b[i] ^= t;
 			}
-			if (des_setkey((char *)keyblock.b))
+			if (__crypt_des_setkey((char *)keyblock.b))
 				return (NULL);
 		}
 
@@ -584,7 +579,7 @@ crypt(key, setting)
 		salt = (salt<<6) | a64toi[t];
 	}
 	encp += salt_size;
-	if (des_cipher((char *)&constdatablock, (char *)&rsltblock,
+	if (__crypt_des_cipher((char *)&constdatablock, (char *)&rsltblock,
 	    salt, num_iter))
 		return (NULL);
 
@@ -613,7 +608,7 @@ crypt(key, setting)
 
 
 /*
- * The Key Schedule, filled in by des_setkey() or setkey().
+ * The Key Schedule, filled in by __crypt_des_setkey() or setkey().
  */
 #define	KS_SIZE	16
 static C_block	KS[KS_SIZE];
@@ -621,7 +616,7 @@ static C_block	KS[KS_SIZE];
 /*
  * Set up the key schedule from the key.
  */
-STATIC int des_setkey(key)
+__private_extern__ int __crypt_des_setkey(key)
 	register const char *key;
 {
 	register DCL_BLOCK(K, K0, K1);
@@ -655,7 +650,7 @@ STATIC int des_setkey(key)
  * NOTE: the performance of this routine is critically dependent on your
  * compiler and machine architecture.
  */
-STATIC int des_cipher(in, out, salt, num_iter)
+__private_extern__ int __crypt_des_cipher(in, out, salt, num_iter)
 	const char *in;
 	char *out;
 	long salt;
@@ -667,7 +662,8 @@ STATIC int des_cipher(in, out, salt, num_iter)
 #endif
 	register long L0, L1, R0, R1, k;
 	register C_block *kp;
-	register int ks_inc, loop_count;
+	register int loop_count;
+	ssize_t ks_inc;
 	C_block B;
 
 	L0 = salt;
@@ -943,15 +939,16 @@ STATIC void init_perm(perm, p, chars_in, chars_out)
 		}
 	}
 }
+#endif /* BUILDING_VARIANT */
 
 /*
  * "setkey" routine (for backwards compatibility)
  */
-#ifdef __APPLE_PR_3509199_COMPAT__
-int setkey(key)
-#else /* __APPLE_PR_3509199_COMPAT__ */
+#if __DARWIN_UNIX03
 void setkey(key)
-#endif /* __APPLE_PR_3509199_COMPAT__ */
+#else /* !__DARWIN_UNIX03 */
+int setkey(key)
+#endif /* __DARWIN_UNIX03 */
 	register const char *key;
 {
 	register int i, j, k;
@@ -965,21 +962,21 @@ void setkey(key)
 		}
 		keyblock.b[i] = k;
 	}
-#ifdef __APPLE_PR_3509199_COMPAT__
-	return (des_setkey((char *)keyblock.b));
-#else /* __APPLE_PR_3509199_COMPAT__ */
-	des_setkey((char *)keyblock.b);
-#endif /* __APPLE_PR_3509199_COMPAT__ */
+#if __DARWIN_UNIX03
+	__crypt_des_setkey((char *)keyblock.b);
+#else /* !__DARWIN_UNIX03 */
+	return (__crypt_des_setkey((char *)keyblock.b));
+#endif /* __DARWIN_UNIX03 */
 }
 
 /*
  * "encrypt" routine (for backwards compatibility)
  */
-#ifdef __APPLE_PR_3509199_COMPAT__
-int encrypt(block, flag)
-#else /* __APPLE_PR_3509199_COMPAT__ */
+#if __DARWIN_UNIX03
 void encrypt(block, flag)
-#endif /* __APPLE_PR_3509199_COMPAT__ */
+#else /* !__DARWIN_UNIX03 */
+int encrypt(block, flag)
+#endif /* __DARWIN_UNIX03 */
 	register char *block;
 	int flag;
 {
@@ -994,12 +991,12 @@ void encrypt(block, flag)
 		}
 		cblock.b[i] = k;
 	}
-#ifdef __APPLE_PR_3509199_COMPAT__
-	if (des_cipher((char *)&cblock, (char *)&cblock, 0L, (flag ? -1: 1)))
+	if (__crypt_des_cipher((char *)&cblock, (char *)&cblock, 0L, (flag ? -1: 1)))
+#if __DARWIN_UNIX03
+		return;
+#else /* !__DARWIN_UNIX03 */
 		return (1);
-#else /* __APPLE_PR_3509199_COMPAT__ */
-	(void)des_cipher((char *)&cblock, (char *)&cblock, 0L, (flag ? -1: 1));
-#endif /* __APPLE_PR_3509199_COMPAT__ */
+#endif /* __DARWIN_UNIX03 */
 	for (i = 7; i >= 0; i--) {
 		k = cblock.b[i];
 		for (j = 7; j >= 0; j--) {
@@ -1007,11 +1004,12 @@ void encrypt(block, flag)
 			k >>= 1;
 		}
 	}
-#ifdef __APPLE_PR_3509199_COMPAT__
+#if !__DARWIN_UNIX03
 	return (0);
-#endif /* __APPLE_PR_3509199_COMPAT__ */
+#endif /* !__DARWIN_UNIX03 */
 }
 
+#ifndef BUILDING_VARIANT
 #ifdef DEBUG
 STATIC
 prtab(s, t, num_rows)
@@ -1031,3 +1029,4 @@ prtab(s, t, num_rows)
 	(void)printf("\n");
 }
 #endif
+#endif /* BUILDING_VARIANT */

@@ -1,5 +1,5 @@
---- tmpnam.3.orig	Fri May 28 14:35:53 2004
-+++ tmpnam.3	Fri May 28 14:36:02 2004
+--- /Volumes/XDisk/tmp/Libc/stdio/FreeBSD/tmpnam.3.orig	2004-06-21 12:38:25.000000000 -0700
++++ /Volumes/XDisk/tmp/Libc/stdio/FreeBSD/tmpnam.3	2004-10-24 17:08:31.000000000 -0700
 @@ -229,11 +229,6 @@
  .Sh SEE ALSO
  .Xr mkstemp 3 ,

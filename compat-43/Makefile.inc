@@ -10,6 +10,8 @@ FBSDMISRCS= creat.c gethostid.c getwd.c killpg.c sethostid.c setpgrp.c \
 	setrgid.c setruid.c
 .include "Makefile.fbsd_end"
 
+UNIX03SRCS += setpgrp.c
+
 .if ${LIB} == "c"
 MAN2+=	sigblock.2 sigpause.2 sigsetmask.2 sigvec.2
 

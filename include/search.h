@@ -12,9 +12,9 @@
 #include <sys/cdefs.h>
 #include <_types.h>
 
-#ifndef _BSD_SIZE_T_DEFINED_
-#define _BSD_SIZE_T_DEFINED_
-typedef __osx_size_t	size_t;
+#ifndef _SIZE_T
+#define _SIZE_T
+typedef __darwin_size_t	size_t;
 #endif
 
 typedef	struct entry {

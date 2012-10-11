@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -34,6 +32,26 @@
 
     .globl  _errno
 
+#if 0
+MI_ENTRY_POINT(cerror_cvt)
+    MI_PUSH_STACK_FRAME
+    MI_GET_ADDRESS(r12,_errno)
+    cmplwi  r3,102		    /* EOPNOTSUPP? */
+    bne     1f
+    li	    r3,45		    /* Yes; make ENOTSUP for compatibility */
+1:
+    stw     r3,0(r12)               /* save syscall return code in global */
+    MI_CALL_EXTERNAL(_cthread_set_errno_self)
+    li      r3,-1                   /* then bug return value */
+    li      r4,-1                   /* in case we're returning a long-long in 32-bit mode, etc */
+    MI_POP_STACK_FRAME_AND_RETURN
+#endif
+
+MI_ENTRY_POINT(cerror_cvt)
+    cmplwi  r3,102		    /* EOPNOTSUPP? */
+    bne     1f
+    li	    r3,45		    /* Yes; make ENOTSUP for compatibility */
+1:
 MI_ENTRY_POINT(cerror)
     MI_PUSH_STACK_FRAME
     MI_GET_ADDRESS(r12,_errno)

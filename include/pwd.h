@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -70,27 +68,22 @@
 
 #include <_types.h>
 
-#ifndef _GID_T_DECLARED
-typedef __osx_gid_t		gid_t;
-#define _GID_T_DECLARED
+#ifndef _GID_T
+typedef __darwin_gid_t		gid_t;
+#define _GID_T
 #endif
 
-#ifndef _BSD_SIZE_T_DEFINED_
-#define _BSD_SIZE_T_DEFINED_
-typedef __osx_size_t		size_t;
+#ifndef _SIZE_T
+#define _SIZE_T
+typedef	__darwin_size_t		size_t;
 #endif
 
-#ifndef _BSD_TIME_T_DEFINED_
-#define _BSD_TIME_T_DEFINED_
-typedef __osx_time_t		time_t;
+#ifndef _UID_T
+typedef __darwin_uid_t		uid_t;
+#define _UID_T
 #endif
 
-#ifndef _UID_T_DECLARED
-typedef __osx_uid_t		uid_t;
-#define _UID_T_DECLARED
-#endif
-
-#ifndef _POSIX_SOURCE
+#ifndef _POSIX_C_SOURCE
 #define	_PATH_PWD		"/etc"
 #define	_PATH_PASSWD		"/etc/passwd"
 #define	_PASSWD			"passwd"
@@ -128,12 +121,12 @@ struct passwd {
 	char	*pw_passwd;		/* encrypted password */
 	uid_t	pw_uid;			/* user uid */
 	gid_t	pw_gid;			/* user gid */
-	time_t	pw_change;		/* password change time */
+	__darwin_time_t pw_change;		/* password change time */
 	char	*pw_class;		/* user access class */
 	char	*pw_gecos;		/* Honeywell login info */
 	char	*pw_dir;		/* home directory */
 	char	*pw_shell;		/* default shell */
-	time_t	pw_expire;		/* account expiration */
+	__darwin_time_t pw_expire;		/* account expiration */
 };
 
 #include <sys/cdefs.h>
@@ -144,7 +137,7 @@ struct passwd	*getpwnam(const char *);
 int		 getpwuid_r(uid_t, struct passwd *, char *, size_t, struct passwd **);
 int		 getpwnam_r(const char *, struct passwd *, char *, size_t, struct passwd **);
 struct passwd	*getpwent(void);
-#if !defined(_POSIX_SOURCE) && !defined(_XOPEN_SOURCE)
+#if !defined(_POSIX_C_SOURCE) && !defined(_XOPEN_SOURCE)
 int		 setpassent(int);
 char 		*user_from_uid(uid_t, int);
 #endif

@@ -8,7 +8,11 @@ MDSRCS+=  ATPgetreq.s \
 	ATsocket.s \
 	_exit.s \
 	_getlogin.s \
+	__mmap.s \
 	_pthread_kill.s \
+	__pthread_canceled.s \
+	__pthread_markcancel.s \
+	__semwait_signal.s \
 	_setjmp.s \
 	_setlogin.s \
 	_sysctl.s \
@@ -27,7 +31,6 @@ MDSRCS+=  ATPgetreq.s \
 	audit.s \
 	auditctl.s \
 	auditon.s \
-	auditsvc.s \
 	bind.s \
 	cerror.s \
 	chdir.s \
@@ -68,6 +71,7 @@ MDSRCS+=  ATPgetreq.s \
 	getauid.s \
 	getdirentries.s \
 	getdirentriesattr.s \
+	getdtablesize.s \
 	getegid.s \
 	geteuid.s \
 	getfh.s \
@@ -114,24 +118,21 @@ MDSRCS+=  ATPgetreq.s \
 	mknod.s \
 	mlock.s \
 	mlockall.s \
-	mmap.s \
 	mount.s \
-	mprotect.s \
-	msgctl.s \
 	msgget.s \
 	msgrcv.s \
 	msgsnd.s \
 	msgsys.s \
-	msync.s \
 	munlock.s \
 	munlockall.s \
-	munmap.s \
 	new_system_shared_regions.s \
 	nfsclnt.s \
 	nfssvc.s \
 	open.s \
+	OSAtomic.s \
 	pathconf.s \
 	pipe.s \
+	poll.s \
 	posix_madvise.s \
 	pread.s \
 	profil.s \
@@ -161,7 +162,6 @@ MDSRCS+=  ATPgetreq.s \
 	sem_trywait.s \
 	sem_wait.s \
 	semconfig.s \
-	semctl.s \
 	semget.s \
 	semop.s \
 	semsys.s \
@@ -188,7 +188,6 @@ MDSRCS+=  ATPgetreq.s \
 	setuid.s \
 	setxattr.s  \
 	shmat.s \
-	shmctl.s \
 	shmdt.s \
 	shmget.s \
 	shmsys.s \

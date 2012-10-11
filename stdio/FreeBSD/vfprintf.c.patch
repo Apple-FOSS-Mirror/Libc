@@ -1,6 +1,15 @@
---- vfprintf.c.orig	Sun May 30 01:12:48 2004
-+++ vfprintf.c	Sun May 30 01:18:16 2004
-@@ -58,6 +58,7 @@
+--- vfprintf.c.orig	2004-11-25 11:38:35.000000000 -0800
++++ vfprintf.c	2005-02-24 15:16:20.000000000 -0800
+@@ -40,6 +40,8 @@
+ #include <sys/cdefs.h>
+ __FBSDID("$FreeBSD: src/lib/libc/stdio/vfprintf.c,v 1.68 2004/08/26 06:25:28 des Exp $");
+ 
++#include "xlocale_private.h"
++
+ /*
+  * Actual printf innards.
+  *
+@@ -58,6 +60,7 @@
  #include <stdlib.h>
  #include <string.h>
  #include <wchar.h>
@@ -8,7 +17,7 @@
  
  #include <stdarg.h>
  #include "un-namespace.h"
-@@ -66,6 +67,12 @@
+@@ -66,6 +69,12 @@
  #include "local.h"
  #include "fvwrite.h"
  
@@ -21,7 +30,7 @@
  union arg {
  	int	intarg;
  	u_int	uintarg;
-@@ -93,6 +100,16 @@
+@@ -93,6 +102,16 @@
  #endif
  	wint_t	wintarg;
  	wchar_t	*pwchararg;
@@ -38,7 +47,7 @@
  };
  
  /*
-@@ -103,7 +120,11 @@
+@@ -103,19 +122,56 @@
  	T_LONG, T_U_LONG, TP_LONG, T_LLONG, T_U_LLONG, TP_LLONG,
  	T_PTRDIFFT, TP_PTRDIFFT, T_SIZET, TP_SIZET,
  	T_INTMAXT, T_UINTMAXT, TP_INTMAXT, TP_VOID, TP_CHAR, TP_SCHAR,
@@ -50,7 +59,14 @@
  };
  
  static int	__sprint(FILE *, struct __suio *);
-@@ -116,6 +137,37 @@
+-static int	__sbprintf(FILE *, const char *, va_list) __printflike(2, 0);
++static int	__sbprintf(FILE *, locale_t, const char *, va_list) __printflike(3, 0);
+ static char	*__ujtoa(uintmax_t, char *, int, int, const char *, int, char,
+ 		    const char *);
+ static char	*__ultoa(u_long, char *, int, int, const char *, int, char,
+ 		    const char *);
+-static char	*__wcsconv(wchar_t *, int);
++static char	*__wcsconv(wchar_t *, int, locale_t);
  static void	__find_arguments(const char *, va_list, union arg **);
  static void	__grow_type_table(int, enum typeid **, int *);
  
@@ -71,6 +87,8 @@
 + * processor would crash on illegal instruction.  By isolating the calling
 + * sequence in getvec(), __vprintf() is callable by a non-Altivec processor.
 + *-----------------------------------------------------------------------*/
++static va_list getvec(union arg *, const union arg *, int, va_list) __attribute__((noinline));
++
 +static va_list
 +getvec(union arg *dst, const union arg *argtable, int nextarg, va_list ap)
 +{
@@ -88,7 +106,84 @@
  /*
   * Flush out all the vectors defined by the given uio,
   * then reset it so that it can be reused.
-@@ -451,6 +503,9 @@
+@@ -141,7 +197,7 @@
+  * worries about ungetc buffers and so forth.
+  */
+ static int
+-__sbprintf(FILE *fp, const char *fmt, va_list ap)
++__sbprintf(FILE *fp, locale_t loc, const char *fmt, va_list ap)
+ {
+ 	int ret;
+ 	FILE fake;
+@@ -160,7 +216,7 @@
+ 	fake._lbfsize = 0;	/* not actually used, but Just In Case */
+ 
+ 	/* do the work, then copy any error status */
+-	ret = __vfprintf(&fake, fmt, ap);
++	ret = __vfprintf(&fake, loc, fmt, ap);
+ 	if (ret >= 0 && __fflush(&fake))
+ 		ret = EOF;
+ 	if (fake._flags & __SERR)
+@@ -336,7 +392,7 @@
+  * that the wide char. string ends in a null character.
+  */
+ static char *
+-__wcsconv(wchar_t *wcsarg, int prec)
++__wcsconv(wchar_t *wcsarg, int prec, locale_t loc)
+ {
+ 	static const mbstate_t initial;
+ 	mbstate_t mbs;
+@@ -354,7 +410,7 @@
+ 		p = wcsarg;
+ 		mbs = initial;
+ 		for (;;) {
+-			clen = wcrtomb(buf, *p++, &mbs);
++			clen = wcrtomb_l(buf, *p++, &mbs, loc);
+ 			if (clen == 0 || clen == (size_t)-1 ||
+ 			    nbytes + clen > prec)
+ 				break;
+@@ -363,7 +419,7 @@
+ 	} else {
+ 		p = wcsarg;
+ 		mbs = initial;
+-		nbytes = wcsrtombs(NULL, (const wchar_t **)&p, 0, &mbs);
++		nbytes = wcsrtombs_l(NULL, (const wchar_t **)&p, 0, &mbs, loc);
+ 		if (nbytes == (size_t)-1)
+ 			return (NULL);
+ 	}
+@@ -378,7 +434,7 @@
+ 	p = wcsarg;
+ 	mbs = initial;
+ 	while (mbp - convbuf < nbytes) {
+-		clen = wcrtomb(mbp, *p++, &mbs);
++		clen = wcrtomb_l(mbp, *p++, &mbs, loc);
+ 		if (clen == 0 || clen == (size_t)-1)
+ 			break;
+ 		mbp += clen;
+@@ -402,7 +458,21 @@
+ 	int ret;
+ 
+ 	FLOCKFILE(fp);
+-	ret = __vfprintf(fp, fmt0, ap);
++	ret = __vfprintf(fp, __current_locale(), fmt0, ap);
++	FUNLOCKFILE(fp);
++	return (ret);
++}
++
++int
++vfprintf_l(FILE * __restrict fp, locale_t loc, const char * __restrict fmt0,
++    va_list ap)
++
++{
++	int ret;
++
++	NORMALIZE_LOCALE(loc);
++	FLOCKFILE(fp);
++	ret = __vfprintf(fp, loc, fmt0, ap);
+ 	FUNLOCKFILE(fp);
+ 	return (ret);
+ }
+@@ -451,12 +521,15 @@
  #define	PTRDIFFT	0x800		/* ptrdiff_t */
  #define	INTMAXT		0x1000		/* intmax_t */
  #define	CHARINT		0x2000		/* print char using int format */
@@ -98,7 +193,15 @@
  
  /*
   * Non-MT-safe version
-@@ -502,6 +557,11 @@
+  */
+-int
+-__vfprintf(FILE *fp, const char *fmt0, va_list ap)
++__private_extern__ int
++__vfprintf(FILE *fp, locale_t loc, const char *fmt0, va_list ap)
+ {
+ 	char *fmt;		/* format string */
+ 	int ch;			/* character from fmt */
+@@ -502,6 +575,11 @@
  	int nseps;		/* number of group separators with ' */
  	int nrepeats;		/* number of repeats of the last group */
  #endif
@@ -110,7 +213,7 @@
  	u_long	ulval;		/* integer arguments %[diouxX] */
  	uintmax_t ujval;	/* %j, %ll, %q, %t, %z integers */
  	int base;		/* base for [diouxX] conversion */
-@@ -574,15 +634,6 @@
+@@ -574,15 +652,6 @@
  }
  
  	/*
@@ -126,7 +229,7 @@
  	 * To extend shorts properly, we need both signed and unsigned
  	 * argument extraction methods.
  	 */
-@@ -633,7 +684,6 @@
+@@ -633,22 +702,23 @@
  		val = GETARG (int); \
  	}
  
@@ -134,19 +237,27 @@
  	thousands_sep = '\0';
  	grouping = NULL;
  	convbuf = NULL;
-@@ -642,8 +692,10 @@
- 	decimal_point = localeconv()->decimal_point;
+ #ifndef NO_FLOATING_POINT
+ 	dtoaresult = NULL;
+-	decimal_point = localeconv()->decimal_point;
++	decimal_point = localeconv_l(loc)->decimal_point;
  #endif
  	/* sorry, fprintf(read_only_file, "") returns EOF, not 0 */
--	if (cantwrite(fp))
-+	if (cantwrite(fp)) {
+-	if (prepwrite(fp) != 0)
++	if (prepwrite(fp) != 0) {
 +		errno = EBADF;
  		return (EOF);
 +	}
  
  	/* optimise fprintf(stderr) (and other unbuffered Unix files) */
  	if ((fp->_flags & (__SNBF|__SWR|__SRW)) == (__SNBF|__SWR) &&
-@@ -675,6 +727,9 @@
+ 	    fp->_file >= 0)
+-		return (__sbprintf(fp, fmt0, ap));
++		return (__sbprintf(fp, loc, fmt0, ap));
+ 
+ 	fmt = (char *)fmt0;
+ 	argtable = NULL;
+@@ -675,6 +745,9 @@
  		}
  		if (ch == '\0')
  			goto done;
@@ -156,7 +267,7 @@
  		fmt++;		/* skip over '%' */
  
  		flags = 0;
-@@ -683,6 +738,9 @@
+@@ -683,6 +756,9 @@
  		prec = -1;
  		sign = '\0';
  		ox[1] = '\0';
@@ -166,7 +277,7 @@
  
  rflag:		ch = *fmt++;
  reswitch:	switch (ch) {
-@@ -698,6 +756,11 @@
+@@ -698,6 +774,11 @@
  		case '#':
  			flags |= ALT;
  			goto rflag;
@@ -178,7 +289,18 @@
  		case '*':
  			/*-
  			 * ``A negative field width argument is taken as a
-@@ -793,6 +856,12 @@
+@@ -718,8 +799,8 @@
+ 			goto rflag;
+ 		case '\'':
+ 			flags |= GROUPING;
+-			thousands_sep = *(localeconv()->thousands_sep);
+-			grouping = localeconv()->grouping;
++			thousands_sep = *(localeconv_l(loc)->thousands_sep);
++			grouping = localeconv_l(loc)->grouping;
+ 			goto rflag;
+ 		case '.':
+ 			if ((ch = *fmt++) == '*') {
+@@ -793,14 +874,20 @@
  			flags |= LONGINT;
  			/*FALLTHROUGH*/
  		case 'c':
@@ -191,7 +313,17 @@
  			if (flags & LONGINT) {
  				static const mbstate_t initial;
  				mbstate_t mbs;
-@@ -817,6 +886,12 @@
+ 				size_t mbseqlen;
+ 
+ 				mbs = initial;
+-				mbseqlen = wcrtomb(cp = buf,
+-				    (wchar_t)GETARG(wint_t), &mbs);
++				mbseqlen = wcrtomb_l(cp = buf,
++				    (wchar_t)GETARG(wint_t), &mbs, loc);
+ 				if (mbseqlen == (size_t)-1) {
+ 					fp->_flags |= __SERR;
+ 					goto error;
+@@ -817,6 +904,12 @@
  			/*FALLTHROUGH*/
  		case 'd':
  		case 'i':
@@ -204,7 +336,7 @@
  			if (flags & INTMAX_SIZE) {
  				ujval = SJARG();
  				if ((intmax_t)ujval < 0) {
-@@ -835,6 +910,13 @@
+@@ -835,6 +928,13 @@
  #ifndef NO_FLOATING_POINT
  		case 'a':
  		case 'A':
@@ -218,7 +350,28 @@
  			if (ch == 'a') {
  				ox[1] = 'x';
  				xdigs = xdigs_lower;
-@@ -866,6 +948,13 @@
+@@ -848,6 +948,12 @@
+ 				prec++;
+ 			if (dtoaresult != NULL)
+ 				freedtoa(dtoaresult);
++#ifdef LDBL_COMPAT
++			fparg.dbl = GETARG(double);
++			dtoaresult = cp =
++			    __hdtoa(fparg.dbl, xdigs, prec,
++			    &expt, &signflag, &dtoaend);
++#else /* !LDBL_COMPAT */
+ 			if (flags & LONGDBL) {
+ 				fparg.ldbl = GETARG(long double);
+ 				dtoaresult = cp =
+@@ -859,6 +965,7 @@
+ 				    __hdtoa(fparg.dbl, xdigs, prec,
+ 				    &expt, &signflag, &dtoaend);
+ 			}
++#endif /* LDBL_COMPAT */
+ 			if (prec < 0)
+ 				prec = dtoaend - cp;
+ 			if (expt == INT_MAX)
+@@ -866,6 +973,13 @@
  			goto fp_common;
  		case 'e':
  		case 'E':
@@ -232,7 +385,7 @@
  			expchar = ch;
  			if (prec < 0)	/* account for digit before decpt */
  				prec = DEFPREC + 1;
-@@ -874,10 +963,24 @@
+@@ -874,10 +988,24 @@
  			goto fp_begin;
  		case 'f':
  		case 'F':
@@ -257,7 +410,30 @@
  			expchar = ch - ('g' - 'e');
  			if (prec == 0)
  				prec = 1;
-@@ -993,6 +1096,12 @@
+@@ -886,6 +1014,14 @@
+ 				prec = DEFPREC;
+ 			if (dtoaresult != NULL)
+ 				freedtoa(dtoaresult);
++#ifdef LDBL_COMPAT
++			fparg.dbl = GETARG(double);
++			dtoaresult = cp =
++			    dtoa(fparg.dbl, expchar ? 2 : 3, prec,
++			    &expt, &signflag, &dtoaend);
++			if (expt == 9999)
++				expt = INT_MAX;
++#else /* !LDBL_COMPAT */
+ 			if (flags & LONGDBL) {
+ 				fparg.ldbl = GETARG(long double);
+ 				dtoaresult = cp =
+@@ -899,6 +1035,7 @@
+ 				if (expt == 9999)
+ 					expt = INT_MAX;
+ 			}
++#endif /* LDBL_COMPAT */
+ fp_common:
+ 			if (signflag)
+ 				sign = '-';
+@@ -993,6 +1130,12 @@
  			flags |= LONGINT;
  			/*FALLTHROUGH*/
  		case 'o':
@@ -270,7 +446,7 @@
  			if (flags & INTMAX_SIZE)
  				ujval = UJARG();
  			else
-@@ -1007,6 +1116,12 @@
+@@ -1007,6 +1150,12 @@
  			 * defined manner.''
  			 *	-- ANSI X3J11
  			 */
@@ -283,7 +459,16 @@
  			ujval = (uintmax_t)(uintptr_t)GETARG(void *);
  			base = 16;
  			xdigs = xdigs_lower;
-@@ -1056,6 +1171,12 @@
+@@ -1025,7 +1174,7 @@
+ 				if ((wcp = GETARG(wchar_t *)) == NULL)
+ 					cp = "(null)";
+ 				else {
+-					convbuf = __wcsconv(wcp, prec);
++					convbuf = __wcsconv(wcp, prec, loc);
+ 					if (convbuf == NULL) {
+ 						fp->_flags |= __SERR;
+ 						goto error;
+@@ -1056,6 +1205,12 @@
  			flags |= LONGINT;
  			/*FALLTHROUGH*/
  		case 'u':
@@ -296,7 +481,7 @@
  			if (flags & INTMAX_SIZE)
  				ujval = UJARG();
  			else
-@@ -1068,6 +1189,12 @@
+@@ -1068,6 +1223,12 @@
  		case 'x':
  			xdigs = xdigs_lower;
  hex:
@@ -309,7 +494,7 @@
  			if (flags & INTMAX_SIZE)
  				ujval = UJARG();
  			else
-@@ -1112,6 +1239,14 @@
+@@ -1112,6 +1273,14 @@
  			if (size > BUF)	/* should never happen */
  				abort();
  			break;
@@ -324,7 +509,7 @@
  		default:	/* "%?" prints ?, unless ? is NUL */
  			if (ch == '\0')
  				goto done;
-@@ -1123,6 +1258,184 @@
+@@ -1123,6 +1292,184 @@
  			break;
  		}
  
@@ -429,7 +614,7 @@
 +#define VPRINT(cnt, ind, args...) do {					\
 +	if (flags & FPT) {						\
 +		velm.f = vval.vfloatarg[ind];				\
-+		vlen = asprintf(&vstr, vfmt , ## args, velm.f);		\
++		vlen = asprintf_l(&vstr, loc, vfmt , ## args, velm.f);	\
 +	} else {							\
 +		switch (cnt) {						\
 +		default:						\
@@ -444,7 +629,7 @@
 +			velm.i = (unsigned char)vval.vchararg[ind];	\
 +			break;						\
 +		}							\
-+		vlen = asprintf(&vstr, vfmt , ## args, velm.i);		\
++		vlen = asprintf_l(&vstr, loc, vfmt , ## args, velm.i);	\
 +	}								\
 +	ret += vlen;							\
 +	PRINT(vstr, vlen);						\
@@ -509,7 +694,7 @@
  		/*
  		 * All reasonable formats wind up here.  At this point, `cp'
  		 * points to a string which (if not flags&LADJUST) should be
-@@ -1405,6 +1718,11 @@
+@@ -1406,6 +1753,11 @@
  			if (flags & LONGINT)
  				ADDTYPE(T_WINT);
  			else
@@ -521,7 +706,7 @@
  				ADDTYPE(T_INT);
  			break;
  		case 'D':
-@@ -1412,6 +1730,11 @@
+@@ -1413,6 +1765,11 @@
  			/*FALLTHROUGH*/
  		case 'd':
  		case 'i':
@@ -533,7 +718,7 @@
  			ADDSARG();
  			break;
  #ifndef NO_FLOATING_POINT
-@@ -1422,6 +1745,11 @@
+@@ -1423,6 +1780,11 @@
  		case 'f':
  		case 'g':
  		case 'G':
@@ -545,7 +730,7 @@
  			if (flags & LONGDBL)
  				ADDTYPE(T_LONG_DOUBLE);
  			else
-@@ -1450,9 +1778,19 @@
+@@ -1451,9 +1813,19 @@
  			flags |= LONGINT;
  			/*FALLTHROUGH*/
  		case 'o':
@@ -565,7 +750,7 @@
  			ADDTYPE(TP_VOID);
  			break;
  		case 'S':
-@@ -1470,6 +1808,11 @@
+@@ -1471,6 +1843,11 @@
  		case 'u':
  		case 'X':
  		case 'x':
@@ -577,7 +762,16 @@
  			ADDUARG();
  			break;
  		default:	/* "%?" prints ?, unless ? is NUL */
-@@ -1555,6 +1898,12 @@
+@@ -1537,7 +1914,7 @@
+ 			(*argtable) [n].sizearg = va_arg (ap, size_t);
+ 			break;
+ 		    case TP_SIZET:
+-			(*argtable) [n].psizearg = va_arg (ap, ssize_t *);
++			(*argtable) [n].psizearg = va_arg (ap, size_t *);
+ 			break;
+ 		    case T_INTMAXT:
+ 			(*argtable) [n].intmaxarg = va_arg (ap, intmax_t);
+@@ -1556,6 +1933,12 @@
  			(*argtable) [n].longdoublearg = va_arg (ap, long double);
  			break;
  #endif

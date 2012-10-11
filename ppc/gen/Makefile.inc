@@ -2,7 +2,6 @@
 
 MDSRCS +=	\
      abs.s	\
-     ecvt.c	\
      ffs.s	\
      fp.h	\
      icacheinval.s \

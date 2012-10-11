@@ -170,7 +170,7 @@ for any of the errors specified for the library functions
 and
 .Xr readdir 3 .
 If the
-.Dv FGTW_CHDIR
+.Dv FTW_CHDIR
 flag is set, the
 .Fn nftw
 function may fail and set
@@ -187,11 +187,23 @@ The
 argument is less than 1 or greater than
 .Dv OPEN_MAX .
 .El
+.Sh LEGACY ERRORS
+The
+.Fn ftw
+and
+.Fn nftw
+functions are far more tolerant of symlink cycles and are lax in reporting
+errors while accessing the initial path.  When
+.Fn nftw
+is passed
+.Dv FTW_MOUNT
+it will pass the callback the mount point.
 .Sh SEE ALSO
 .Xr chdir 2 ,
 .Xr close 2 ,
 .Xr open 2 ,
 .Xr stat 2 ,
+.Xr compat 5 ,
 .Xr fts 3 ,
 .Xr malloc 3 ,
 .Xr opendir 3 ,
@@ -202,7 +214,12 @@ The
 and
 .Fn nftw
 functions conform to
-.St -p1003.1-2001 .
+.St -p1003.1-2001 and
+.St -susv3 .
+.Sh HISTORY
+Prior to MacOS X 10.4 
+.Nm ftw
+did not follow symlinks.
 .Sh BUGS
 The
 .Fa maxfds

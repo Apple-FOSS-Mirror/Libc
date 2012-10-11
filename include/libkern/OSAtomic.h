@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -38,53 +36,105 @@
  * WARNING: all addresses passed to these functions must be "naturally aligned", ie
  * int32_t's must be 32-bit aligned (low 2 bits of address zero), and int64_t's
  * must be 64-bit aligned (low 3 bits of address zero.)
+ *
+ * Note that some versions of the atomic functions incorporate memory barriers,
+ * and some do not.  Barriers strictly order memory access on a weakly-ordered
+ * architecture such as PPC.  All loads and stores executed in sequential program
+ * order before the barrier will complete before any load or store executed after
+ * the barrier.  On a uniprocessor, the barrier operation is typically a nop.
+ * On a multiprocessor, the barrier can be quite expensive.
+ *
+ * Most code will want to use the barrier functions to insure that memory shared
+ * between threads is properly synchronized.  For example, if you want to initialize
+ * a shared data structure and then atomically increment a variable to indicate
+ * that the initialization is complete, then you MUST use OSAtomicIncrement32Barrier()
+ * to ensure that the stores to your data structure complete before the atomic add.
+ * Likewise, the consumer of that data structure MUST use OSAtomicDecrement32Barrier(),
+ * in order to ensure that their loads of the structure are not executed before
+ * the atomic decrement.  On the other hand, if you are simply incrementing a global
+ * counter, then it is safe and potentially faster to use OSAtomicIncrement32().
+ *
+ * If you are unsure which version to use, prefer the barrier variants as they are
+ * safer.
+ *
+ * The spinlock and queue operations always incorporate a barrier.
  */ 
 __BEGIN_DECLS
 
-/* Arithmetic functions.  They do not incorporate memory barriers and thus cannot
- * be used by themselves to synchronize shared memory.  They return the new value.
- * The "or", "and", and "xor" operations are layered on top of compare-and-swap.
+
+/* Arithmetic functions.  They return the new value.  All the "or", "and", and "xor"
+ * operations, and the barrier forms of add, are layered on top of compare-and-swap.
  */
 int32_t	OSAtomicAdd32( int32_t theAmount, int32_t *theValue );
+int32_t	OSAtomicAdd32Barrier( int32_t theAmount, int32_t *theValue );
+
 inline static
-int32_t	OSAtomicIncrement32( int32_t *theValue ) { return OSAtomicAdd32(  1, theValue); }
+int32_t	OSAtomicIncrement32( int32_t *theValue )
+            { return OSAtomicAdd32(  1, theValue); }
 inline static
-int32_t	OSAtomicDecrement32( int32_t *theValue ) { return OSAtomicAdd32( -1, theValue); }
+int32_t	OSAtomicIncrement32Barrier( int32_t *theValue )
+            { return OSAtomicAdd32Barrier(  1, theValue); }
+
+inline static
+int32_t	OSAtomicDecrement32( int32_t *theValue )
+            { return OSAtomicAdd32( -1, theValue); }
+inline static
+int32_t	OSAtomicDecrement32Barrier( int32_t *theValue )
+            { return OSAtomicAdd32Barrier( -1, theValue); }
+
 int32_t	OSAtomicOr32( uint32_t theMask, uint32_t *theValue );
+int32_t	OSAtomicOr32Barrier( uint32_t theMask, uint32_t *theValue );
+
 int32_t	OSAtomicAnd32( uint32_t theMask, uint32_t *theValue ); 
+int32_t	OSAtomicAnd32Barrier( uint32_t theMask, uint32_t *theValue ); 
+
 int32_t	OSAtomicXor32( uint32_t theMask, uint32_t *theValue );
+int32_t	OSAtomicXor32Barrier( uint32_t theMask, uint32_t *theValue );
+
 #if defined(__ppc64__) || defined(__i386__)
+
 int64_t	OSAtomicAdd64( int64_t theAmount, int64_t *theValue );
+int64_t	OSAtomicAdd64Barrier( int64_t theAmount, int64_t *theValue );
+
 inline static
-int64_t	OSAtomicIncrement64( int64_t *theValue ) { return OSAtomicAdd64(  1, theValue); }
+int64_t	OSAtomicIncrement64( int64_t *theValue )
+            { return OSAtomicAdd64(  1, theValue); }
 inline static
-int64_t	OSAtomicDecrement64( int64_t *theValue ) { return OSAtomicAdd64( -1, theValue); }
+int64_t	OSAtomicIncrement64Barrier( int64_t *theValue )
+            { return OSAtomicAdd64Barrier(  1, theValue); }
+
+inline static
+int64_t	OSAtomicDecrement64( int64_t *theValue )
+            { return OSAtomicAdd64( -1, theValue); }
+inline static
+int64_t	OSAtomicDecrement64Barrier( int64_t *theValue )
+            { return OSAtomicAdd64Barrier( -1, theValue); }
+
 #endif  /* defined(__ppc64__) || defined(__i386__) */
 
-/* Compare and swap.  They do not incorporate memory barriers and thus cannot be used
- * by themselved to synchronize shared memory.  They return true if the swap occured.
+
+/* Compare and swap.  They return true if the swap occured.
  */
 bool    OSAtomicCompareAndSwap32( int32_t oldValue, int32_t newValue, int32_t *theValue );
+bool    OSAtomicCompareAndSwap32Barrier( int32_t oldValue, int32_t newValue, int32_t *theValue );
+
 #if defined(__ppc64__) || defined(__i386__)
+
 bool    OSAtomicCompareAndSwap64( int64_t oldValue, int64_t newValue, int64_t *theValue );
+bool    OSAtomicCompareAndSwap64Barrier( int64_t oldValue, int64_t newValue, int64_t *theValue );
+
 #endif  /* defined(__ppc64__) || defined(__i386__) */
 
-/* Test and set.  They do not incorporate memory barriers and thus cannot be used by
- * themselves to synchronize shared memory.  They return the original value of the bit.
- * They operate on bit (0x80>>(n&7)) in byte ((char*)theAddress + (n>>3)).  They are 
- * layered on top of the compare-and-swap operation.
+
+/* Test and set.  They return the original value of the bit, and operate on bit (0x80>>(n&7))
+ * in byte ((char*)theAddress + (n>>3)).  They are layered on top of the compare-and-swap
+ * operation.
  */
 bool    OSAtomicTestAndSet( uint32_t n, void *theAddress );
+bool    OSAtomicTestAndSetBarrier( uint32_t n, void *theAddress );
 bool    OSAtomicTestAndClear( uint32_t n, void *theAddress );
-
-/* FILO queue and dequeue.  These use memory barriers as required to synchronize access to
- * the queued/dequeued structure.  The "inOffset" field is the offset within the structure
- * of the link field. "inList" is the list head; it is not a struct.  The queue is a singly
- * linked list with a zero terminator.
- */
-void *	OSAtomicDequeue( void ** inList, size_t inOffset);
-void    OSAtomicEnqueue( void ** inList, void * inNewLink, size_t inOffset);
-
+bool    OSAtomicTestAndClearBarrier( uint32_t n, void *theAddress );
+ 
 /* Spinlocks.  These use memory barriers as required to synchronize access to shared
  * memory protected by the lock.  The lock operation spins, but employs various strategies
  * to back off if the lock is held, making it immune to most priority-inversion livelocks.
@@ -99,13 +149,8 @@ bool    OSSpinLockTry( OSSpinLock *lock );
 void    OSSpinLockLock( OSSpinLock *lock );
 void    OSSpinLockUnlock( OSSpinLock *lock );
 
-/* Memory barrier.  This strictly orders memory accesses in a weakly ordered model such
- * as PPC.  All loads and stores executed in sequential program order before the barrier
- * will complete with respect to the coherence mechanism, before any load or store
- * executed after the barrier.  Used with an atomic operation, the barrier can be used to
- * create custom synchronization protocols, as an alternative to the spinlock or queue/
- * dequeue operations.  Note that this barrier does not order uncached loads and stores.
- * On a uniprocessor, the barrier is typically a nop.
+
+/* Memory barrier.  It is both a read and write barrier.
  */
 void    OSMemoryBarrier( void );
 

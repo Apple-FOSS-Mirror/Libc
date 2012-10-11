@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -160,20 +158,156 @@ MI_ENTRY_POINT(_OSAtomicTestAndClear)
     mtlr    r12                 // restore return adddress
     mr      r3,r11              // return original value of bit
     blr
+ 
+
+/* int32_t	OSAtomicAdd32Barrier( int32_t theAmount, int32_t *theValue ); */
+
+MI_ENTRY_POINT(_OSAtomicAdd32Barrier)
+    mflr    r12                 // save return address
+    mr      r5,r4               // move ptr to where compare-and-swap wants it
+    mr      r11,r3              // copy theAmount
+1:
+    lwz     r3,0(r5)            // get old value
+    add     r4,r3,r11           // make new value
+    bla     _COMM_PAGE_COMPARE_AND_SWAP32B   // preserves r4,r5,r9-r12
+    cmpwi   r3,0                // did swap occur?
+    beq--   1b                  // compare-and-swap failed, try again
+    mtlr    r12                 // restore return adddress
+    mr      r3,r4               // return new value
+    blr
+
+
+/* int32_t	OSAtomicOr32Barrier( int32_t theMask, int32_t *theValue ); */
+
+MI_ENTRY_POINT(_OSAtomicOr32Barrier)
+    mflr    r12                 // save return address
+    mr      r5,r4               // move ptr to where compare-and-swap wants it
+    mr      r11,r3              // copy mask
+1:
+    lwz     r3,0(r5)            // get old value
+    or      r4,r3,r11           // make new value
+    bla     _COMM_PAGE_COMPARE_AND_SWAP32B   // preserves r4,r5,r9-r12
+    cmpwi   r3,0                // did swap occur?
+    beq--   1b                  // compare-and-swap failed, try again
+    mtlr    r12                 // restore return adddress
+    mr      r3,r4               // return new value
+    blr
+
+
+/* int32_t	OSAtomicAnd32Barrier( int32_t theMask, int32_t *theValue ); */
+
+MI_ENTRY_POINT(_OSAtomicAnd32Barrier)
+    mflr    r12                 // save return address
+    mr      r5,r4               // move ptr to where compare-and-swap wants it
+    mr      r11,r3              // copy mask
+1:
+    lwz     r3,0(r5)            // get old value
+    and     r4,r3,r11           // make new value
+    bla     _COMM_PAGE_COMPARE_AND_SWAP32B   // preserves r4,r5,r9-r12
+    cmpwi   r3,0                // did swap occur?
+    beq--   1b                  // compare-and-swap failed, try again
+    mtlr    r12                 // restore return adddress
+    mr      r3,r4               // return new value
+    blr
+
+
+/* int32_t	OSAtomicXor32Barrier( int32_t theMask, int32_t *theValue ); */
+
+MI_ENTRY_POINT(_OSAtomicXor32Barrier)
+    mflr    r12                 // save return address
+    mr      r5,r4               // move ptr to where compare-and-swap wants it
+    mr      r11,r3              // copy mask
+1:
+    lwz     r3,0(r5)            // get old value
+    xor     r4,r3,r11           // make new value
+    bla     _COMM_PAGE_COMPARE_AND_SWAP32B   // preserves r4,r5,r9-r12
+    cmpwi   r3,0                // did swap occur?
+    beq--   1b                  // compare-and-swap failed, try again
+    mtlr    r12                 // restore return adddress
+    mr      r3,r4               // return new value
+    blr
+
+
+/* int64_t	OSAtomicAdd64Barrier( int64_t theAmount, int64_t *theValue ); */
+
+#if defined(__ppc64__)
+MI_ENTRY_POINT(_OSAtomicAdd64Barrier)
+    mflr    r12                 // save return address
+    mr      r5,r4               // move ptr to where compare-and-swap wants it
+    mr      r11,r3              // copy theAmount
+1:
+    ld      r3,0(r5)            // get old value
+    add     r4,r3,r11           // make new value
+    bla     _COMM_PAGE_COMPARE_AND_SWAP64B   // preserves r4,r5,r9-r12
+    cmpwi   r3,0                // did swap occur?
+    beq--   1b                  // compare-and-swap failed, try again
+    mtlr    r12                 // restore return adddress
+    mr      r3,r4               // return new value
+    blr
+#endif  /* defined(__ppc64__) */
+
+
+/* bool OSAtomicCompareAndSwap32Barrier( int32_t oldValue, int32_t newValue, int32_t *theValue ); */
+
+MI_ENTRY_POINT(_OSAtomicCompareAndSwap32Barrier)
+    ba      _COMM_PAGE_COMPARE_AND_SWAP32B
     
 
-/* void *	OSAtomicDequeue( void ** inList, size_t inOffset); */
+/* bool OSAtomicCompareAndSwap64Barrier( int364_t oldValue, int64_t newValue, int64_t *theValue ); */
 
-MI_ENTRY_POINT(_OSAtomicDequeue)
-    ba      _COMM_PAGE_DEQUEUE
+#if defined(__ppc64__)
+MI_ENTRY_POINT(_OSAtomicCompareAndSwap64Barrier)
+    ba      _COMM_PAGE_COMPARE_AND_SWAP64B
+#endif  /* defined(__ppc64__) */
+
+
+/* bool OSAtomicTestAndSetBarrier( uint32_t n, void *theAddress ); */
+
+MI_ENTRY_POINT(_OSAtomicTestAndSetBarrier)
+    mflr    r12                 // save return
+    srwi    r5,r3,3             // get byte offset of n
+    rlwinm  r6,r3,0,0x7         // get bit position within byte
+    add     r4,r4,r5            // r4 points to byte containing the bit
+    lis     r10,0x8000          // light bit 0
+    rlwimi  r6,r4,3,0x18        // r6 is bit position within word
+    clrrgi  r5,r4,2             // point to word containing the bit
+    srw     r10,r10,r6          // get mask for bit
+    addi    r9,r6,1             // save bit position + 1
+1:
+    lwz     r3,0(r5)            // get old word
+    rlwnm   r11,r3,r9,0x1       // right justify old value of bit
+    or      r4,r3,r10           // set it in new word
+    bla     _COMM_PAGE_COMPARE_AND_SWAP32B   // preserves r4,r5,r9-r12
+    cmpwi   r3,0                // did swap occur?
+    beq--   1b                  // compare-and-swap failed, try again
+    mtlr    r12                 // restore return adddress
+    mr      r3,r11              // return original value of bit
+    blr
+
+
+/* bool OSAtomicTestAndClearBarrier( uint32_t n, void *theAddress ); */
+
+MI_ENTRY_POINT(_OSAtomicTestAndClearBarrier)
+    mflr    r12                 // save return
+    srwi    r5,r3,3             // get byte offset of n
+    rlwinm  r6,r3,0,0x7         // get bit position within byte
+    add     r4,r4,r5            // r4 points to byte containing the bit
+    lis     r10,0x8000          // light bit 0
+    rlwimi  r6,r4,3,0x18        // r6 is bit position within word
+    clrrgi  r5,r4,2             // point to word containing the bit
+    srw     r10,r10,r6          // get mask for bit
+    addi    r9,r6,1             // save bit position + 1
+1:
+    lwz     r3,0(r5)            // get old word
+    rlwnm   r11,r3,r9,0x1       // right justify old value of bit
+    andc    r4,r3,r10           // clear it in new word
+    bla     _COMM_PAGE_COMPARE_AND_SWAP32B   // preserves r4,r5,r9-r12
+    cmpwi   r3,0                // did swap occur?
+    beq--   1b                  // compare-and-swap failed, try again
+    mtlr    r12                 // restore return adddress
+    mr      r3,r11              // return original value of bit
+    blr
     
-
-/* void OSAtomicEnqueue( void ** inList, void * inNewLink, size_t inOffset); */
-
-MI_ENTRY_POINT(_OSAtomicEnqueue)
-    ba      _COMM_PAGE_ENQUEUE
-    
-
 /* bool    OSSpinLockTry( OSSpinLock *lock ); */
 
 MI_ENTRY_POINT(_OSSpinLockTry)

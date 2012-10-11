@@ -42,16 +42,16 @@ WITH THE ACCESS, USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  */
 
-/* $Id: wordexp.h,v 1.2 2004/04/15 23:35:49 emoy Exp $ */
+/* $Id: wordexp.h,v 1.4 2004/11/25 19:38:10 emoy Exp $ */
 #ifndef _WORDEXP_H
 #define _WORDEXP_H
 
 #include <sys/cdefs.h>
-#include <sys/_types.h>
+#include <_types.h>
 
-#ifndef	_BSD_SIZE_T_DEFINED_
-#define	_BSD_SIZE_T_DEFINED_
-typedef	__size_t	size_t;
+#ifndef	_SIZE_T
+#define	_SIZE_T
+typedef	__darwin_size_t		size_t;
 #endif
 
 typedef struct {

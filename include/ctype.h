@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -65,6 +63,9 @@
  *	@(#)ctype.h	8.4 (Berkeley) 1/21/94
  */
 
+//Begin-Libc
+#include "xlocale_private.h"
+//End-Libc
 #ifndef	_CTYPE_H_
 #define _CTYPE_H_
 
@@ -88,7 +89,10 @@
 #define	_CTYPE_SW1	0x40000000L		/* 1 width character */
 #define	_CTYPE_SW2	0x80000000L		/* 2 width character */
 #define	_CTYPE_SW3	0xc0000000L		/* 3 width character */
+#define	_CTYPE_SWM	0xe0000000L		/* Mask for screen width data */
+#define	_CTYPE_SWS	30			/* Bits to shift to get width */
 
+#ifdef _NONSTD_SOURCE
 /*
  * Backward compatibility
  */
@@ -110,6 +114,7 @@
 #define	_SW1		_CTYPE_SW1		/* 1 width character */
 #define	_SW2		_CTYPE_SW2		/* 2 width character */
 #define	_SW3		_CTYPE_SW3		/* 3 width character */
+#endif /* _NONSTD_SOURCE */
 
 __BEGIN_DECLS
 int     isalnum(int);
@@ -126,19 +131,19 @@ int     isupper(int);
 int     isxdigit(int);
 int     tolower(int);
 int     toupper(int);
+int     isascii(int);
+int     toascii(int);
 
-#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_C_SOURCE)
 int     _tolower(int);
 int     _toupper(int);
 int     digittoint(int);
-int     isascii(int);
 int     ishexnumber(int);
 int     isideogram(int);
 int     isnumber(int);
 int     isphonogram(int);
 int     isrune(int);
 int     isspecial(int);
-int     toascii(int);
 #endif
 __END_DECLS
 
@@ -158,9 +163,10 @@ __END_DECLS
 #define tolower(c)      __tolower(c)
 #define toupper(c)      __toupper(c)
 
-#if !defined(_ANSI_SOURCE) && !defined(_POSIX_SOURCE)
 #define	_tolower(c)	__tolower(c)
 #define	_toupper(c)	__toupper(c)
+
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_C_SOURCE)
 #define	digittoint(c)	__maskrune((c), 0xFF)
 #define	isascii(c)	(((c) & ~0x7F) == 0)
 #define	ishexnumber(c)	__istype((c), _CTYPE_X)
@@ -172,11 +178,11 @@ __END_DECLS
 #define toascii(c)	((c) & 0x7F)
 #endif
 
-/* See comments in <machine/ansi.h> about _BSD_RUNE_T_. */
+/* See comments in <machine/_type.h> about __darwin_ct_rune_t. */
 __BEGIN_DECLS
-unsigned long	___runetype(_BSD_CT_RUNE_T_);
-_BSD_CT_RUNE_T_	___tolower(_BSD_CT_RUNE_T_);
-_BSD_CT_RUNE_T_	___toupper(_BSD_CT_RUNE_T_);
+unsigned long		___runetype(__darwin_ct_rune_t);
+__darwin_ct_rune_t	___tolower(__darwin_ct_rune_t);
+__darwin_ct_rune_t	___toupper(__darwin_ct_rune_t);
 __END_DECLS
 
 /*
@@ -195,65 +201,117 @@ __END_DECLS
 #if !defined(_DONT_USE_CTYPE_INLINE_) && \
     (defined(_USE_CTYPE_INLINE_) || defined(__GNUC__) || defined(__cplusplus))
 
-static __inline int     
-__maskrune(_BSD_CT_RUNE_T_ _c, unsigned long _f)
-{
 #ifdef USE_ASCII
-	return _CurrentRuneLocale->runetype[_c && 0xff] & _f;
-#else /* USE_ASCII */
-	return ((_c < 0 || _c >= _CACHED_RUNES) ? ___runetype(_c) :
-		_CurrentRuneLocale->runetype[_c]) & _f;
-#endif /* USE_ASCII */
+static __inline int     
+__maskrune(__darwin_ct_rune_t _c, unsigned long _f)
+{
+	return _CurrentRuneLocale->__runetype[_c && 0xff] & _f;
 }
+//Begin-Libc
+#elif defined(__LIBC__)
+static __inline int     
+__maskrune(__darwin_ct_rune_t _c, unsigned long _f)
+{
+	return ((_c < 0 || _c >= _CACHED_RUNES) ? ___runetype(_c) :
+		__current_locale()->__lc_ctype->_CurrentRuneLocale.__runetype[_c]) & _f;
+}
+//End-Libc
+#else /* !USE_ASCII */
+__BEGIN_DECLS
+int             	__maskrune(__darwin_ct_rune_t, unsigned long);   
+__END_DECLS
+#endif /* USE_ASCII */
 
 static __inline int
-__istype(_BSD_CT_RUNE_T_ c, unsigned long f)
-{
-	return !!(__maskrune(c, f));
-}
-
-static __inline _BSD_CT_RUNE_T_
-__isctype(_BSD_CT_RUNE_T_ _c, unsigned long _f)
+__istype(__darwin_ct_rune_t _c, unsigned long _f)
 {
 #ifdef USE_ASCII
-	return !!(_DefaultRuneLocale.runetype[_c & 0xff] & _f);
+	return !!(__maskrune(_c, _f));
+#else /* USE_ASCII */
+	return !!(isascii(_c) ? (_DefaultRuneLocale.__runetype[_c] & _f)
+		: __maskrune(_c, _f));
+#endif /* USE_ASCII */
+}
+
+static __inline __darwin_ct_rune_t
+__isctype(__darwin_ct_rune_t _c, unsigned long _f)
+{
+#ifdef USE_ASCII
+	return !!(_DefaultRuneLocale.__runetype[_c & 0xff] & _f);
 #else /* USE_ASCII */
 	return (_c < 0 || _c >= _CACHED_RUNES) ? 0 :
-		!!(_DefaultRuneLocale.runetype[_c] & _f);
+		!!(_DefaultRuneLocale.__runetype[_c] & _f);
 #endif /* USE_ASCII */
 }
 
-static __inline _BSD_CT_RUNE_T_
-__toupper(_BSD_CT_RUNE_T_ _c)
-{
 #ifdef USE_ASCII
-	return _CurrentRuneLocale->mapupper[_c & 0xff];
-#else /* USE_ASCII */
+static __inline __darwin_ct_rune_t
+__toupper(__darwin_ct_rune_t _c)
+{
+	return _CurrentRuneLocale->__mapupper[_c & 0xff];
+}
+
+static __inline __darwin_ct_rune_t
+__tolower(__darwin_ct_rune_t _c)
+{
+	return _CurrentRuneLocale->__maplower[_c & 0xff];
+}
+//Begin-Libc
+#elif defined(__LIBC__)
+/*
+ * We can't do what we do for __toupper_l() (check for ASCII first, then call
+ * ___toupper_l() otherwise) because versions of ___toupper() before Tiger
+ * assume c >= _CACHED_RUNES.  So we are stuck making __toupper() a routine
+ * to hide the extended locale details, outside of Libc.
+ */
+static __inline __darwin_ct_rune_t
+__toupper(__darwin_ct_rune_t _c)
+{
 	return (_c < 0 || _c >= _CACHED_RUNES) ? ___toupper(_c) :
-		_CurrentRuneLocale->mapupper[_c];
-#endif /* USE_ASCII */
+		__current_locale()->__lc_ctype->_CurrentRuneLocale.__mapupper[_c];
 }
 
-static __inline _BSD_CT_RUNE_T_
-__tolower(_BSD_CT_RUNE_T_ _c)
+static __inline __darwin_ct_rune_t
+__tolower(__darwin_ct_rune_t _c)
 {
-#ifdef USE_ASCII
-	return _CurrentRuneLocale->maplower[_c & 0xff];
-#else /* USE_ASCII */
 	return (_c < 0 || _c >= _CACHED_RUNES) ? ___tolower(_c) :
-		_CurrentRuneLocale->maplower[_c];
+		__current_locale()->__lc_ctype->_CurrentRuneLocale.__maplower[_c];
+}
+//End-Libc
+#else /* USE_ASCII */
+__BEGIN_DECLS
+__darwin_ct_rune_t	__toupper(__darwin_ct_rune_t);
+__darwin_ct_rune_t	__tolower(__darwin_ct_rune_t);
+__END_DECLS
 #endif /* USE_ASCII */
+
+static __inline int
+__wcwidth(__darwin_ct_rune_t _c)
+{
+	unsigned int _x;
+
+	if (_c == 0)
+		return (0);
+	_x = (unsigned int)__maskrune(_c, _CTYPE_SWM|_CTYPE_R);
+	if ((_x & _CTYPE_SWM) != 0)
+		return ((_x & _CTYPE_SWM) >> _CTYPE_SWS);
+	return ((_x & _CTYPE_R) != 0 ? 1 : -1);
 }
 
 #else /* not using inlines */
 
 __BEGIN_DECLS
-int             __maskrune(_BSD_CT_RUNE_T_, unsigned long);   
-int		__istype (_BSD_CT_RUNE_T_, unsigned long);
-int             __isctype(_BSD_CT_RUNE_T_, unsigned long);   
-_BSD_CT_RUNE_T_ __toupper(_BSD_CT_RUNE_T_);
-_BSD_CT_RUNE_T_ __tolower(_BSD_CT_RUNE_T_);
+int             	__maskrune(__darwin_ct_rune_t, unsigned long);   
+int			__istype (__darwin_ct_rune_t, unsigned long);
+int             	__isctype(__darwin_ct_rune_t, unsigned long);   
+__darwin_ct_rune_t	__toupper(__darwin_ct_rune_t);
+__darwin_ct_rune_t	__tolower(__darwin_ct_rune_t);
+int             	__wcwidth(__darwin_ct_rune_t);   
 __END_DECLS
 #endif /* using inlines */
+
+#ifdef _USE_EXTENDED_LOCALES_
+#include <xlocale/_ctype.h>
+#endif /* _USE_EXTENDED_LOCALES_ */
 
 #endif /* !_CTYPE_H_ */

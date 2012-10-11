@@ -38,7 +38,7 @@
 static char sccsid[] = "@(#)hash.c	8.9 (Berkeley) 6/16/94";
 #endif /* LIBC_SCCS and not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: src/lib/libc/db/hash/hash.c,v 1.11 2002/03/21 22:46:26 obrien Exp $");
+__FBSDID("$FreeBSD: src/lib/libc/db/hash/hash.c,v 1.12 2004/09/10 05:41:41 kuriyama Exp $");
 
 #include "namespace.h"
 #include <sys/param.h>
@@ -220,7 +220,7 @@ __hash_open(file, flags, mode, info, dflags)
 
 #ifdef DEBUG
 	(void)fprintf(stderr,
-"%s\n%s%x\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%x\n%s%x\n%s%d\n%s%d\n",
+"%s\n%s%p\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%d\n%s%x\n%s%x\n%s%d\n%s%d\n",
 	    "init_htab:",
 	    "TABLE POINTER   ", hashp,
 	    "BUCKET SIZE     ", hashp->BSIZE,

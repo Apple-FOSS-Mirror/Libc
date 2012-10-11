@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -111,7 +109,7 @@ const char *const sys_errlist[] = {
 	"Protocol not available",		/* 42 - ENOPROTOOPT */
 	"Protocol not supported",		/* 43 - EPROTONOSUPPORT */
 	"Socket type not supported",		/* 44 - ESOCKTNOSUPPORT */
-	"Operation not supported",		/* 45 - EOPNOTSUPP */
+	"Operation not supported",		/* 45 - ENOTSUP */
 	"Protocol family not supported",	/* 46 - EPFNOSUPPORT */
 						/* 47 - EAFNOSUPPORT */
 	"Address family not supported by protocol family",
@@ -182,6 +180,7 @@ const char *const sys_errlist[] = {
 	"Not a STREAM",				/* 99 - ENOSTR */
 	"Protocol error",			/* 100 - EPROTO */
 	"STREAM ioctl timeout",			/* 101 - ETIME */
+	"Operation not supported on socket",	/* 102 - EOPNOTSUPP */
 };
 
 const int sys_nerr = sizeof(sys_errlist) / sizeof(sys_errlist[0]);

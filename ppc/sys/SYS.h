@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -107,6 +105,20 @@ _##trap_name:						@\
  * Macros.
  */
 
+/*
+ * This is the same as SYSCALL, but it can call an alternate error
+ * return function.  It's generic to support potential future callers.
+ */
+#define	SYSCALL_ERR(name, nargs, error_ret)		\
+	.globl	error_ret			@\
+    MI_ENTRY_POINT(_##name)     @\
+	kernel_trap_args_##nargs    @\
+	li	r0,SYS_##name			@\
+	sc                          @\
+	b	1f                      @\
+	blr                         @\
+1:	MI_BRANCH_EXTERNAL(error_ret)
+
 #define	SYSCALL(name, nargs)			\
 	.globl	cerror				@\
     MI_ENTRY_POINT(_##name)     @\
@@ -140,3 +152,8 @@ _##pseudo:                      @\
 #undef END
 #import	<mach/ppc/syscall_sw.h>
  
+#if !defined(SYS___pthread_canceled)
+#define SYS___pthread_markcancel	332
+#define SYS___pthread_canceled		333
+#define SYS___semwait_signal		334
+#endif

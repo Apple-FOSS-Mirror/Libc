@@ -43,12 +43,15 @@
 #include <sys/cdefs.h>
 #include <_types.h>
 
-#ifndef _BSD_SIZE_T_DEFINED_
-#define _BSD_SIZE_T_DEFINED_
-typedef	__osx_size_t	size_t;
+#ifndef _SIZE_T
+#define _SIZE_T
+typedef	__darwin_size_t	size_t;
 #endif
 
+#ifndef _POSIX_C_SOURCE
+struct dirent;
 struct stat;
+#endif /* _POSIX_C_SOURCE */
 typedef struct {
 	size_t gl_pathc;	/* Count of total paths so far. */
 	int gl_matchc;		/* Count of paths matching pattern. */
@@ -58,6 +61,7 @@ typedef struct {
 				/* Copy of errfunc parameter to glob. */
 	int (*gl_errfunc)(const char *, int);
 
+#ifndef _POSIX_C_SOURCE
 	/*
 	 * Alternate filesystem access methods for glob; replacement
 	 * versions of closedir(3), readdir(3), opendir(3), stat(2)
@@ -68,6 +72,9 @@ typedef struct {
 	void *(*gl_opendir)(const char *);
 	int (*gl_lstat)(const char *, struct stat *);
 	int (*gl_stat)(const char *, struct stat *);
+#else /* _POSIX_C_SOURCE */
+	void *_gl_reserved[5];
+#endif /* _POSIX_C_SOURCE */
 } glob_t;
 
 /* Believed to have been introduced in 1003.2-1992 */
@@ -85,7 +92,6 @@ typedef struct {
 #define	GLOB_NOMATCH	(-3)	/* No match and GLOB_NOCHECK was not set. */
 #define	GLOB_NOSYS	(-4)	/* Obsolete: source comptability only. */
 
-#ifndef _POSIX_SOURCE
 #define	GLOB_ALTDIRFUNC	0x0040	/* Use alternately specified directory funcs. */
 #define	GLOB_BRACE	0x0080	/* Expand braces ala csh. */
 #define	GLOB_MAGCHAR	0x0100	/* Pattern had globbing characters. */
@@ -97,11 +103,10 @@ typedef struct {
 /* source compatibility, these are the old names */
 #define GLOB_MAXPATH	GLOB_LIMIT
 #define	GLOB_ABEND	GLOB_ABORTED
-#endif /* ! _POSIX_SOURCE */
 
 __BEGIN_DECLS
-int	glob(const char * __restrict, int,
-	    int (* __restrict)(const char *, int), glob_t * __restrict);
+int	glob(const char * __restrict, int, int (*)(const char *, int), 
+	     glob_t * __restrict);
 void	globfree(glob_t *);
 __END_DECLS
 

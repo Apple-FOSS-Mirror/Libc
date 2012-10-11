@@ -33,65 +33,20 @@
 
 #include <sys/cdefs.h>
 #include <_types.h>
+
+#ifndef _WCTRANS_T
+#define	_WCTRANS_T
+typedef	__darwin_wctrans_t	wctrans_t;
+#endif
+
+#include <_wctype.h>
 #include <ctype.h>
 
-#ifndef	_BSD_CT_RUNE_T_DEFINED_
-#define _BSD_CT_RUNE_T_DEFINED_
-typedef	__osx_ct_rune_t	ct_rune_t;
-#endif
-
-#ifndef	_BSD_RUNE_T_DEFINED_
-#define _BSD_RUNE_T_DEFINED_
-typedef	__osx_rune_t	rune_t;
-#endif
-
-#ifndef	__cplusplus
-#ifndef	_BSD_WCHAR_T_DEFINED_
-#define	_BSD_WCHAR_T_DEFINED_
-typedef	__osx_wchar_t	wchar_t;
-#endif	/* _BSD_WCHAR_T_DEFINED_ */
-#endif	/* __cplusplus */
-
-#ifndef	_BSD_WINT_T_DEFINED_
-#define _BSD_WINT_T_DEFINED_
-typedef	__osx_wint_t	wint_t;
-#endif
-
-#ifndef _WCTRANS_T_DEFINED_
-#define	_WCTRANS_T_DEFINED_
-typedef	__osx_wctrans_t	wctrans_t;
-#endif
-
-#ifndef _WCTYPE_T_DEFINED_
-#define	_WCTYPE_T_DEFINED_
-typedef	__osx_wctype_t	wctype_t;
-#endif
-
-#ifndef WEOF
-#define	WEOF		__OSX_WEOF
-#endif
-
 __BEGIN_DECLS
-int	iswalnum(wint_t);
-int	iswalpha(wint_t);
 int	iswblank(wint_t);
-int	iswcntrl(wint_t);
-int	iswctype(wint_t, wctype_t);
-int	iswdigit(wint_t);
-int	iswgraph(wint_t);
-int	iswlower(wint_t);
-int	iswprint(wint_t);
-int	iswpunct(wint_t);
-int	iswspace(wint_t);
-int	iswupper(wint_t);
-int	iswxdigit(wint_t);
 wint_t	towctrans(wint_t, wctrans_t);
-wint_t	towlower(wint_t);
-wint_t	towupper(wint_t);
 wctrans_t
 	wctrans(const char *);
-wctype_t
-	wctype(const char *);
 
 #if !defined(_ANSI_SOURCE)
 wint_t	iswascii(wint_t);
@@ -102,23 +57,13 @@ wint_t	iswphonogram(wint_t);
 wint_t	iswrune(wint_t);
 wint_t	iswspecial(wint_t);
 #endif
+
+#if !defined(_ANSI_SOURCE) && !defined(_POSIX_C_SOURCE)
+wint_t	nextwctype(wint_t, wctype_t);
+#endif
 __END_DECLS
 
-#define	iswalnum(wc)		__istype((wc), _CTYPE_A|_CTYPE_D)
-#define	iswalpha(wc)		__istype((wc), _CTYPE_A)
 #define	iswblank(wc)		__istype((wc), _CTYPE_B)
-#define	iswcntrl(wc)		__istype((wc), _CTYPE_C)
-#define	iswctype(wc, charclass)	__istype((wc), (charclass))
-#define	iswdigit(wc)		__istype((wc), _CTYPE_D)
-#define	iswgraph(wc)		__istype((wc), _CTYPE_G)
-#define	iswlower(wc)		__istype((wc), _CTYPE_L)
-#define	iswprint(wc)		__istype((wc), _CTYPE_R)
-#define	iswpunct(wc)		__istype((wc), _CTYPE_P)
-#define	iswspace(wc)		__istype((wc), _CTYPE_S)
-#define	iswupper(wc)		__istype((wc), _CTYPE_U)
-#define	iswxdigit(wc)		__istype((wc), _CTYPE_X)
-#define	towlower(wc)		__tolower(wc)
-#define	towupper(wc)		__toupper(wc)
 
 #if !defined(_ANSI_SOURCE)
 #define	iswascii(wc)		(((wc) & ~0x7F) == 0)
@@ -129,5 +74,9 @@ __END_DECLS
 #define	iswrune(wc)		__istype((wc), 0xFFFFFF00L)
 #define	iswspecial(wc)		__istype((wc), _CTYPE_T)
 #endif
+
+#ifdef _USE_EXTENDED_LOCALES_
+#include <xlocale/_wctype.h>
+#endif /* _USE_EXTENDED_LOCALES_ */
 
 #endif		/* _WCTYPE_H_ */

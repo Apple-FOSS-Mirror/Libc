@@ -1,5 +1,5 @@
---- atexit.c.orig	Thu Mar 11 13:16:53 2004
-+++ atexit.c	Mon Mar 15 12:47:39 2004
+--- atexit.c.orig	2004-03-11 13:16:53.000000000 -0800
++++ atexit.c	2004-09-15 00:14:26.000000000 -0700
 @@ -45,6 +45,9 @@
  #include <stdlib.h>
  #include <unistd.h>
@@ -22,3 +22,12 @@
  
   	error = atexit_register(&fn);	
  	return (error);
+@@ -156,7 +163,7 @@
+  * handlers are called.
+  */
+ void
+-__cxa_finalize(void *dso)
++__cxa_finalize(const void *dso)
+ {
+ 	struct atexit *p;
+ 	struct atexit_fn fn;

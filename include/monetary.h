@@ -32,18 +32,22 @@
 #include <sys/cdefs.h>
 #include <_types.h>
 
-#ifndef _BSD_SIZE_T_DEFINED_
-#define _BSD_SIZE_T_DEFINED_
-typedef	__osx_size_t	size_t;
+#ifndef _SIZE_T
+#define _SIZE_T
+typedef	__darwin_size_t		size_t;
 #endif
 
-#ifndef _BSD_SSIZE_T_DEFINED_
-#define _BSD_SSIZE_T_DEFINED_
-typedef	__osx_ssize_t	ssize_t;
+#ifndef _SSIZE_T
+#define _SSIZE_T
+typedef	__darwin_ssize_t	ssize_t;
 #endif
 
 __BEGIN_DECLS
 ssize_t	strfmon(char *, size_t, const char *, ...);
 __END_DECLS
+
+#ifdef _USE_EXTENDED_LOCALES_
+#include <xlocale/_monetary.h>
+#endif /* _USE_EXTENDED_LOCALES_ */
 
 #endif /* !_MONETARY_H_ */

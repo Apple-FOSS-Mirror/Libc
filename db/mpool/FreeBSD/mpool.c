@@ -35,7 +35,7 @@
 static char sccsid[] = "@(#)mpool.c	8.5 (Berkeley) 7/26/94";
 #endif /* LIBC_SCCS and not lint */
 #include <sys/cdefs.h>
-__FBSDID("$FreeBSD: src/lib/libc/db/mpool/mpool.c,v 1.10 2002/03/22 21:52:01 obrien Exp $");
+__FBSDID("$FreeBSD: src/lib/libc/db/mpool/mpool.c,v 1.12 2004/09/10 05:41:41 kuriyama Exp $");
 
 #include "namespace.h"
 #include <sys/param.h>
@@ -207,9 +207,8 @@ mpool_get(mp, pgno, flags)
 	++mp->pageread;
 #endif
 	off = mp->pagesize * pgno;
-	if (lseek(mp->fd, off, SEEK_SET) != off)
-		return (NULL);
-	if ((nr = _read(mp->fd, bp->page, mp->pagesize)) != mp->pagesize) {
+	nr = pread(mp->fd, bp->page, mp->pagesize, off);
+	if (nr != mp->pagesize) {
 		if (nr >= 0)
 			errno = EFTYPE;
 		return (NULL);
@@ -381,9 +380,7 @@ mpool_write(mp, bp)
 		(mp->pgout)(mp->pgcookie, bp->pgno, bp->page);
 
 	off = mp->pagesize * bp->pgno;
-	if (lseek(mp->fd, off, SEEK_SET) != off)
-		return (RET_ERROR);
-	if (_write(mp->fd, bp->page, mp->pagesize) != mp->pagesize)
+	if (pwrite(mp->fd, bp->page, mp->pagesize, off) != mp->pagesize)
 		return (RET_ERROR);
 
 	bp->flags &= ~MPOOL_DIRTY;
@@ -429,9 +426,9 @@ mpool_stat(mp)
 	int cnt;
 	char *sep;
 
-	(void)fprintf(stderr, "%lu pages in the file\n", mp->npages);
+	(void)fprintf(stderr, "%u pages in the file\n", mp->npages);
 	(void)fprintf(stderr,
-	    "page size %lu, cacheing %lu pages of %lu page max cache\n",
+	    "page size %lu, cacheing %u pages of %u page max cache\n",
 	    mp->pagesize, mp->curcache, mp->maxcache);
 	(void)fprintf(stderr, "%lu page puts, %lu page gets, %lu page new\n",
 	    mp->pageput, mp->pageget, mp->pagenew);

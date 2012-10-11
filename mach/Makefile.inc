@@ -65,3 +65,11 @@ MISRCS += ${MIGSRCS} \
 CLEANFILES += ${MIGHDRS} ${MIGSRCS} ${MD_MIGDEFS:.defs=Server.c} \
 		${MIGDEFS:.defs=Server.c} exc.h excUser.c excServer.c \
 		notify.h notifyUser.c notifyServer.c
+
+.if ${LIB} == "c"
+
+MAN2 += brk.2
+
+MLINKS += brk.2 sbrk.2
+
+.endif

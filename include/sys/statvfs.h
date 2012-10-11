@@ -3,8 +3,6 @@
  *
  * @APPLE_LICENSE_HEADER_START@
  * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
- * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
  * Version 2.0 (the 'License'). You may not use this file except in
@@ -29,17 +27,24 @@
 #ifndef _SYS_STATVFS_H_
 #define	_SYS_STATVFS_H_
 
+#include <sys/_types.h>
 #include <sys/cdefs.h>
 
-/* Following types need to be defined in <sys/types.h> as well */
-typedef unsigned int fsblkcnt_t;
-typedef unsigned int fsfilcnt_t;
+#ifndef _FSBLKCNT_T
+#define _FSBLKCNT_T
+typedef __darwin_fsblkcnt_t	fsblkcnt_t;
+#endif
+
+#ifndef _FSFILCNT_T
+#define _FSFILCNT_T
+typedef __darwin_fsfilcnt_t	fsfilcnt_t;
+#endif
 
 /* Following structure is used as a statvfs/fstatvfs function parameter */
 struct statvfs {
 	unsigned long	f_bsize;	/* File system block size */
 	unsigned long	f_frsize;	/* Fundamental file system block size */
-	fsblkcnt_t	f_blocks;	/* Blocks on FS in units of f_frsize*/
+	fsblkcnt_t	f_blocks;	/* Blocks on FS in units of f_frsize */
 	fsblkcnt_t	f_bfree;	/* Free blocks */
 	fsblkcnt_t	f_bavail;	/* Blocks available to non-root */
 	fsfilcnt_t	f_files;	/* Total inodes */

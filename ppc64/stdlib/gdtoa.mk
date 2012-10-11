@@ -1,3 +1,2 @@
-.PATH: ${.CURDIR}/ppc/stdlib
-# Long double is just double precision.
-FBSDSRCS+=machdep_ldisd.c
+# Long double is head-tail pair of doubles
+FBSDSRCS+= gdtoa-strtopdd.c machdep_ldisdd.c _ldbl_util.c

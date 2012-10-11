@@ -1,9 +1,7 @@
 /*
- * Copyright (c) 2003 Apple Computer, Inc. All rights reserved.
+ * Copyright (c) 2004 Apple Computer, Inc. All rights reserved.
  *
  * @APPLE_LICENSE_HEADER_START@
- * 
- * Copyright (c) 1999-2003 Apple Computer, Inc.  All Rights Reserved.
  * 
  * This file contains Original Code and/or Modifications of Original Code
  * as defined in and that are subject to the Apple Public Source License
@@ -24,5 +22,11 @@
  */
 #include "SYS.h"
 
+#ifdef __LP64__
 SYSCALL(lchown, 3)
+#else /* !__LP64__ */
+PSEUDO(lchown$UNIX2003, lchown, 3)
+	blr
 
+SYSCALL_ERR(lchown, 3, cerror_cvt)
+#endif /* __LP64__ */

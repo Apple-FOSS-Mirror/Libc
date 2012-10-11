@@ -26,10 +26,8 @@ THIS SOFTWARE.
 
 ****************************************************************/
 
-/* Please send bug reports to
-	David M. Gay
-	dmg@acm.org
- */
+/* Please send bug reports to David M. Gay (dmg at acm dot org,
+ * with " at " changed at "@" and " dot " changed to ".").	*/
 
 #include "gdtoaimp.h"
 
@@ -68,7 +66,7 @@ strtod
 #ifdef Avoid_Underflow
 	int scale;
 #endif
-	int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, dsign,
+	int bb2, bb5, bbe, bd2, bd5, bbbits, bs2, c, decpt, dsign,
 		 e, e1, esign, i, j, k, nd, nd0, nf, nz, nz0, sign;
 	CONST char *s, *s0, *s1;
 	double aadj, aadj1, adj, rv, rv0;
@@ -82,7 +80,7 @@ strtod
 	int rounding;
 #endif
 
-	sign = nz0 = nz = 0;
+	sign = nz0 = nz = decpt = 0;
 	dval(rv) = 0.;
 	for(s = s00;;s++) switch(*s) {
 		case '-':
@@ -150,6 +148,7 @@ strtod
 	if (c == '.')
 #endif
 		{
+		decpt = 1;
 		c = *++s;
 		if (!nd) {
 			for(; c == '0'; c = *++s)
@@ -225,7 +224,8 @@ strtod
 			ULong bits[2];
 			static FPI fpinan =	/* only 52 explicit bits */
 				{ 52, 1-1023-53+1, 2046-1023-53+1, 1, SI };
-			switch(c) {
+			if (!decpt)
+			 switch(c) {
 			  case 'i':
 			  case 'I':
 				if (match(&s,"nf")) {
@@ -248,8 +248,10 @@ strtod
 						word1(rv) = bits[0];
 						}
 					else {
+#endif
 						word0(rv) = NAN_WORD0;
 						word1(rv) = NAN_WORD1;
+#ifndef No_Hex_NaN
 						}
 #endif
 					goto ret;
