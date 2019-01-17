@@ -261,9 +261,9 @@ int wordexp(const char *__restrict__ words,
 	    strlcat(cbuf, "set -u; ", cbuf_l);
 	}
 	/* This kludge is needed because /bin/sh seems to set IFS to the
-	  defualt even if you have set it;  We also can't just ignore it
-	  because it is hard/unplesent to code around or even a potential
-	  security problem because the test suiete explicitly checks
+	  default even if you have set it;  We also can't just ignore it
+	  because it is hard/unpleasant to code around or even a potential
+	  security problem because the test suite explicitly checks
 	  to make sure setting IFS "works" */
 	if (getenv("IFS")) {
 	    setenv("_IFS", getenv("IFS"), 1);
@@ -340,7 +340,7 @@ int wordexp(const char *__restrict__ words,
     if (regexec(&re_subcmd_syntax_err_kludge, err_buf, 0, NULL, 0) == 0
       || got_pid == -1 || (WIFEXITED(status) && WEXITSTATUS(status))) {
 	if (!(flags & (WRDE_APPEND|WRDE_REUSE))) {
-	    /* Restore pwe if possiable, can't really do it in the append
+	    /* Restore pwe if possible, can't really do it in the append
 	      case, and isn't easy in the reuse case */
 	    *pwe = save;
 	}
